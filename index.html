@@ -148,8 +148,9 @@ function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textCon
 
 // ── CONSTANTS ────────────────────────────────────────────────────
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
-const W=900,H=520,FLOOR=H-40,GR=0.65,SPMAX=100,TICK=33;
-const FH=220; // altura personaje
+const W=900,H=520,FLOOR=H-40,GR=0.5,SPMAX=100,TICK=40;
+const FH=260;
+const FW=100;
 
 // ── AUTH ─────────────────────────────────────────────────────────
 let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null; // 'cpu'|'online'
@@ -434,7 +435,7 @@ function physicsTick(){
     if(!p.grounded){p.vy+=GR;p.y+=p.vy;}
     if(p.y>=FLOOR){p.y=FLOOR;p.vy=0;p.grounded=true;if(p.state==='jump')p.state='idle';}
     fTimer[pk]++;
-    const spd=p.state==='special'?4:p.state==='attack'?3:p.state==='walk'?5:8;
+    const spd=p.state==='special'?6:p.state==='attack'?5:p.state==='walk'?7:10;
     if(fTimer[pk]>=spd){fTimer[pk]=0;p.frame++;}
     const fr=getFrames(pk);
     if(fr.length){
@@ -444,27 +445,33 @@ function physicsTick(){
     if(p.state==='attack'&&p.frame>=(getFrames(pk,'attack').length||1)&&fTimer[pk]===0){p.state='idle';p.frame=0;}
     if(p.state==='hurt'&&p.frame>=(getFrames(pk,'hurt').length||1)&&fTimer[pk]===0){p.state='idle';p.frame=0;}
   });
-  const avgX=(gs.p1.x+gs.p2.x)/2;
-  bgOffset=Math.max(0,Math.min(1,(avgX-W*0.35)/(W*0.3)));
+  // no overlap — mantener distancia mínima entre personajes
+  const minDist=FW+20;
+  if(Math.abs(gs.p1.x-gs.p2.x)<minDist){
+    const push=(minDist-Math.abs(gs.p1.x-gs.p2.x))/2;
+    if(gs.p1.x<gs.p2.x){gs.p1.x-=push;gs.p2.x+=push;}
+    else{gs.p1.x+=push;gs.p2.x-=push;}
+  }
+  ['p1','p2'].forEach(pk=>{gs[pk].x=Math.max(50,Math.min(W-50,gs[pk].x));});
 }
 
 // ── APPLY INPUT ───────────────────────────────────────────────────
 function applyInput(pk,inp){
   const p=gs[pk];if(p.state==='ko')return;
   const ok=pk==='p1'?'p2':'p1',opp=gs[ok];
-  if(inp.left){p.x-=3.5;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
-  else if(inp.right){p.x+=3.5;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
+  if(inp.left){p.x-=2.5;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
+  else if(inp.right){p.x+=2.5;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
   else if(p.state==='walk')p.state='idle';
   p.x=Math.max(50,Math.min(W-50,p.x));
-  if(inp.jump&&p.grounded&&!['attack','special'].includes(p.state)){p.vy=-14;p.grounded=false;p.state='jump';p.frame=0;}
+  if(inp.jump&&p.grounded&&!['attack','special'].includes(p.state)){p.vy=-11;p.grounded=false;p.state='jump';p.frame=0;}
   p.blocking=!!(inp.block&&p.grounded);
   if(p.blocking&&!['attack','special'].includes(p.state))p.state='block';
   else if(!p.blocking&&p.state==='block')p.state='idle';
   if(!['attack','special','hurt','ko','block'].includes(p.state))p.facing=opp.x>p.x?1:-1;
   if(inp.attack&&!['ko','hurt','special'].includes(p.state)&&hitCD[pk]===0){
     p.state='attack';p.frame=0;
-    const reach=110,bx=p.x+(p.facing>0?5:-5-reach);
-    if(bx<opp.x+45&&bx+reach>opp.x-45&&p.y-FH<opp.y&&p.y>opp.y-FH){
+    const reach=90, bx=p.x+(p.facing>0?FW/2:-FW/2-reach);
+    if(bx<opp.x+FW/2&&bx+reach>opp.x-FW/2&&Math.abs(p.y-opp.y)<FH){
       if(!opp.blocking&&inv[ok]===0){
         opp.hp=Math.max(0,opp.hp-10);opp.state='hurt';inv[ok]=18;
         p.special=Math.min(SPMAX,p.special+12);
@@ -483,7 +490,7 @@ function applyInput(pk,inp){
 }
 
 // ── CPU AI ────────────────────────────────────────────────────────
-let cpuTimer=0;
+let cpuTimer=0,cpuAction=null,cpuActionTimer=0;
 const cpuInput={left:false,right:false,jump:false,attack:false,block:false,special:false};
 function updateCPU(){
   const cpu=gs.p2,player=gs.p1;
@@ -491,22 +498,28 @@ function updateCPU(){
   cpuTimer++;
   const dist=Math.abs(cpu.x-player.x);
   const rand=Math.random();
-  // reset
-  cpuInput.left=false;cpuInput.right=false;cpuInput.jump=false;cpuInput.attack=false;cpuInput.block=false;cpuInput.special=false;
-  // approach
-  if(dist>120){
-    if(cpu.x>player.x)cpuInput.left=true;
-    else cpuInput.right=true;
+
+  // limpiar inputs
+  cpuInput.left=false;cpuInput.right=false;cpuInput.jump=false;
+  cpuInput.attack=false;cpuInput.block=false;cpuInput.special=false;
+
+  // acercarse si lejos
+  if(dist>150){
+    cpuInput.left=cpu.x>player.x;
+    cpuInput.right=cpu.x<player.x;
   }
-  // attack in range
-  if(dist<130&&dist>30){
-    if(rand<0.4)cpuInput.attack=true;
-    if(cpu.special>=SPMAX&&rand<0.15)cpuInput.special=true;
+
+  // atacar solo cada ~40 ticks y si está cerca
+  if(dist<140&&dist>30&&cpuTimer%40===0){
+    if(cpu.special>=SPMAX&&rand<0.2) cpuInput.special=true;
+    else cpuInput.attack=true;
   }
-  // occasional jump
-  if(rand<0.02&&cpu.grounded)cpuInput.jump=true;
-  // occasional block when hurt
-  if(player.state==='attack'&&rand<0.3)cpuInput.block=true;
+
+  // salto ocasional
+  if(rand<0.008&&cpu.grounded&&dist>100) cpuInput.jump=true;
+
+  // bloquear si el jugador ataca y está cerca
+  if(player.state==='attack'&&dist<150&&rand<0.25) cpuInput.block=true;
 }
 
 // ── GAME TICK (host) ──────────────────────────────────────────────
@@ -617,17 +630,18 @@ function setupTouch(){
     for(const t of e.changedTouches){
       const p={x:t.clientX/s(),y:t.clientY/s()};
       const near=(cx,cy,r)=>Math.hypot(p.x-cx,p.y-cy)<r;
-      if(near(48,H-58,40)){myInput.left=true;pushInput();}
-      if(near(112,H-58,40)){myInput.right=true;pushInput();}
-      if(near(80,H-114,40)){myInput.jump=true;pushInput();}
-      if(near(W-48,H-58,40)){myInput.attack=true;pushInput();setTimeout(()=>{myInput.attack=false;pushInput();},80);}
-      if(near(W-104,H-58,40)){myInput.block=true;pushInput();}
-      if(near(W-160,H-88,40)){myInput.special=true;pushInput();setTimeout(()=>{myInput.special=false;pushInput();},80);}
+      if(near(48,H-58,42)){myInput.left=true;pushInput();}
+      if(near(112,H-58,42)){myInput.right=true;pushInput();}
+      if(near(80,H-114,42)){myInput.jump=true;pushInput();setTimeout(()=>{myInput.jump=false;pushInput();},100);}
+      if(near(W-48,H-58,42)){myInput.attack=true;pushInput();setTimeout(()=>{myInput.attack=false;pushInput();},120);}
+      if(near(W-104,H-58,42)){myInput.block=true;pushInput();}
+      if(near(W-160,H-88,42)){myInput.special=true;pushInput();setTimeout(()=>{myInput.special=false;pushInput();},120);}
     }
   },{passive:false});
   canvas.addEventListener('touchend',e=>{
     e.preventDefault();
-    myInput.left=false;myInput.right=false;myInput.jump=false;myInput.block=false;
+    // solo soltamos direccionales y bloqueo — ataques se auto-sueltan con timeout
+    myInput.left=false;myInput.right=false;myInput.block=false;
     pushInput();
   },{passive:false});
 }
