@@ -148,7 +148,8 @@ function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textCon
 
 // ── CONSTANTS ────────────────────────────────────────────────────
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
-const W=900,H=520,FLOOR=H-95,GR=0.65,SPMAX=100,TICK=50;
+const W=900,H=520,FLOOR=H-40,GR=0.65,SPMAX=100,TICK=33;
+const FH=220; // altura personaje
 
 // ── AUTH ─────────────────────────────────────────────────────────
 let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null; // 'cpu'|'online'
@@ -251,8 +252,10 @@ function removeChroma(img){
   const d=ox.getImageData(0,0,oc.width,oc.height);
   for(let i=0;i<d.data.length;i+=4){
     const r=d.data[i],g=d.data[i+1],b=d.data[i+2];
-    if(g>90&&g>r*1.25&&g>b*1.25)d.data[i+3]=0;
-    else if(b>90&&b>r*1.15&&b>g*1.15)d.data[i+3]=0;
+    // verde puro: g domina claramente sobre r y b
+    if(g>120&&g-r>60&&g-b>60)d.data[i+3]=0;
+    // azul puro: b domina claramente
+    else if(b>120&&b-r>60&&b-g>40)d.data[i+3]=0;
   }
   ox.putImageData(d,0,0);return oc;
 }
@@ -431,15 +434,15 @@ function physicsTick(){
     if(!p.grounded){p.vy+=GR;p.y+=p.vy;}
     if(p.y>=FLOOR){p.y=FLOOR;p.vy=0;p.grounded=true;if(p.state==='jump')p.state='idle';}
     fTimer[pk]++;
-    const spd=p.state==='special'?5:p.state==='attack'?4:7;
+    const spd=p.state==='special'?4:p.state==='attack'?3:p.state==='walk'?5:8;
     if(fTimer[pk]>=spd){fTimer[pk]=0;p.frame++;}
     const fr=getFrames(pk);
     if(fr.length){
       const loop=!['ko','hurt'].includes(p.state);
       if(p.frame>=fr.length)p.frame=loop?0:fr.length-1;
     }
-    if(p.state==='attack'&&p.frame>=(getFrames(pk,'attack').length||1)-1&&fTimer[pk]===0){p.state='idle';p.frame=0;}
-    if(p.state==='hurt'&&p.frame>=(getFrames(pk,'hurt').length||1)-1&&fTimer[pk]===0){p.state='idle';p.frame=0;}
+    if(p.state==='attack'&&p.frame>=(getFrames(pk,'attack').length||1)&&fTimer[pk]===0){p.state='idle';p.frame=0;}
+    if(p.state==='hurt'&&p.frame>=(getFrames(pk,'hurt').length||1)&&fTimer[pk]===0){p.state='idle';p.frame=0;}
   });
   const avgX=(gs.p1.x+gs.p2.x)/2;
   bgOffset=Math.max(0,Math.min(1,(avgX-W*0.35)/(W*0.3)));
@@ -460,7 +463,7 @@ function applyInput(pk,inp){
   if(!['attack','special','hurt','ko','block'].includes(p.state))p.facing=opp.x>p.x?1:-1;
   if(inp.attack&&!['ko','hurt','special'].includes(p.state)&&hitCD[pk]===0){
     p.state='attack';p.frame=0;
-    const reach=110,bx=p.x+(p.facing>0?5:-5-reach),FH=170;
+    const reach=110,bx=p.x+(p.facing>0?5:-5-reach);
     if(bx<opp.x+45&&bx+reach>opp.x-45&&p.y-FH<opp.y&&p.y>opp.y-FH){
       if(!opp.blocking&&inv[ok]===0){
         opp.hp=Math.max(0,opp.hp-10);opp.state='hurt';inv[ok]=18;
