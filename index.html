@@ -137,7 +137,7 @@ function hideCanvas(){$('c').style.display='none';}
 function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textContent='',3000);}
 
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
-const W=900,H=500,FLOOR=H-38,GR=0.55,SPMAX=100,TICK=33;
+const W=900,H=500,FLOOR=H-38,GR=0.9,SPMAX=100,TICK=33;
 const FH=248,FW=80;
 
 // ── AUTH ─────────────────────────────────────────────────────────
@@ -577,7 +577,7 @@ function physicsTick(){
     if(!p.grounded){p.vy+=GR;p.y+=p.vy;}
     if(p.y>=FLOOR){p.y=FLOOR;p.vy=0;p.grounded=true;if(p.state==='jump')p.state='idle';}
     fTimer[pk]++;
-    const spd=p.state==='attack'?5:p.state==='walk'?5:p.state==='celeb'?3:p.state==='special'?5:8;
+    const spd=p.state==='attack'?(getFrames(pk,'attack').length<=1?8:5):p.state==='walk'?5:p.state==='celeb'?3:p.state==='special'?5:8;
     if(fTimer[pk]>=spd){fTimer[pk]=0;p.frame++;}
     const fr=getFrames(pk);
     if(fr.length){
@@ -615,7 +615,7 @@ function applyInput(pk,inp){
   if(inp.left){p.x-=4.5;if(p.grounded&&p.state!=='attack')p.state='walk';}
   else if(inp.right){p.x+=4.5;if(p.grounded&&p.state!=='attack')p.state='walk';}
   else if(p.state==='walk')p.state='idle';
-  if(inp.jump&&p.grounded&&p.state!=='attack'){p.vy=-20;p.grounded=false;p.state='jump';p.frame=0;}
+  if(inp.jump&&p.grounded&&p.state!=='attack'){p.vy=-14;p.grounded=false;p.state='jump';p.frame=0;}
   p.blocking=!!(inp.block&&p.grounded);
   if(p.blocking&&p.state!=='attack')p.state='block';
   else if(!p.blocking&&p.state==='block')p.state='idle';
@@ -626,7 +626,8 @@ function applyInput(pk,inp){
   }
   const attackFrames=getFrames(pk,'attack');
   const hitFromFrame=attackFrames.length<=1?0:1;
-  if(p.state==='attack'&&p.frame>=hitFromFrame&&!p._attackHit){
+  // para Mauron (1 frame) esperamos al menos 2 ticks antes de detectar hit
+  if(p.state==='attack'&&p.frame>=hitFromFrame&&!p._attackHit&&fTimer[pk]>=2){
     const dist=Math.abs(p.x-opp.x);
     if(dist<=130){
       p._attackHit=true;
