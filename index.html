@@ -303,8 +303,8 @@ let inputRef=null,oppInputRef=null,stateRef=null;
 
 function initGS(){
   gs={
-    p1:{x:W*0.28,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:1,blocking:false,grounded:true},
-    p2:{x:W*0.72,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:-1,blocking:false,grounded:true},
+    p1:{x:W*0.28,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:1,blocking:false,grounded:true,_attackHit:false},
+    p2:{x:W*0.72,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:-1,blocking:false,grounded:true,_attackHit:false},
     timer:90,phase:'fight',specialName:null
   };
   fTimer={p1:0,p2:0};hitCD={p1:0,p2:0};inv={p1:0,p2:0};
@@ -622,8 +622,7 @@ function physicsTick(){
         if(loop)p.frame=0;
         else p.frame=fr.length-1;
         if(p.state==='attack'){p.state='idle';p.frame=0;p._attackHit=false;}
-        if(p.state==='hurt'){p.state='idle';p.frame=0;}
-      }
+        if(p.state==='hurt'){p.state='idle';p.frame=0;}      }
     }
   });
   // collision — solo en el piso, en el aire pueden cruzarse
@@ -674,8 +673,10 @@ function applyInput(pk,inp){
   if(inp.attack&&!['ko','hurt','special'].includes(p.state)&&hitCD[pk]===0){
     if(p.state!=='attack'){p.state='attack';p.frame=0;p._attackHit=false;}
   }
-  // hit detection — frames activos, con cooldown para que dure más
-  if(p.state==='attack'&&p.frame>=1&&!p._attackHit){
+  // hit detection — desde frame 0 si solo hay 1 frame, sino desde frame 1
+  const attackFrames=getFrames(pk,'attack');
+  const hitFromFrame=attackFrames.length<=1?0:1;
+  if(p.state==='attack'&&p.frame>=hitFromFrame&&!p._attackHit){
     const dist=Math.abs(p.x-opp.x);
     if(dist<=130){
       p._attackHit=true;
@@ -697,17 +698,23 @@ function applyInput(pk,inp){
     p.special=0;p.state='special';p.frame=0;
     gs.phase='special';gs.specialName=pk==='p1'?'MACHI':'MAURON';
     specialPhase={name:gs.specialName,t:0};
-    // daño al terminar la animación (no instantáneo)
     const targetKey=ok;
     setTimeout(()=>{
-      if(gs[targetKey].state==='ko')return;
+      if(gs.phase==='ko')return; // ya terminó
+      const target=gs[targetKey];
+      if(target.state==='ko')return;
       const d=Math.abs(gs[pk].x-gs[targetKey].x);
       if(d<=350){
-        if(!gs[targetKey].blocking){
-          gs[targetKey].hp=Math.max(0,gs[targetKey].hp-35);
-          gs[targetKey].state='hurt';gs[targetKey].frame=0;inv[targetKey]=30;
-          if(gs[targetKey].hp<=0){gs[targetKey].state='ko';triggerEndGame();}
-        } else gs[targetKey].hp=Math.max(0,gs[targetKey].hp-8);
+        if(!target.blocking){
+          target.hp=Math.max(0,target.hp-35);
+          target.state='hurt';target.frame=0;inv[targetKey]=30;
+          if(target.hp<=0){
+            target.state='ko';
+            triggerEndGame(); // solo knockea si quedó en 0
+          }
+        } else {
+          target.hp=Math.max(0,target.hp-8);
+        }
       }
     },1200);
   }
