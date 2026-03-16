@@ -729,15 +729,15 @@ function triggerEndGame(){} // legacy — ya no se usa directo
 // ── RENDER ────────────────────────────────────────────────────────
 function renderLoop(){
   ctx.clearRect(0,0,W,H);
-  const inSpecial=gs.phase==='special'&&specialPhase;
-  if(!inSpecial)drawBg(false);
   if(gs.phase==='special'&&specialPhase){
+    // drawSpecial maneja todo: fondo, fighters congelados, placa, ataque
     drawSpecial();
   } else {
+    drawBg(false);
     if(gs.p1.x<gs.p2.x){drawFighter('p1');drawFighter('p2');}
     else{drawFighter('p2');drawFighter('p1');}
+    if(koSeq&&koSeq.phase!=='done')drawKOOverlay();
   }
-  if(koSeq&&koSeq.phase!=='done')drawKOOverlay();
   drawHUD();
   if(gs.phase==='fight')drawControls();
   requestAnimationFrame(renderLoop);
