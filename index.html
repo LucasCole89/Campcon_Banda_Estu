@@ -303,8 +303,13 @@ async function loadSprites(){
 
 // ── CANVAS ───────────────────────────────────────────────────────
 const canvas=$('c'),ctx=canvas.getContext('2d');
-canvas.width=W;canvas.height=H;
-function resize(){const s=Math.min(innerWidth/W,innerHeight/H);canvas.style.width=s*W+'px';canvas.style.height=s*H+'px';}
+function resize(){
+  const dpr=window.devicePixelRatio||1;
+  const s=Math.min(innerWidth/W,innerHeight/H);
+  canvas.style.width=s*W+'px';canvas.style.height=s*H+'px';
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
 resize();window.addEventListener('resize',resize);
 
 // ── GAME STATE ───────────────────────────────────────────────────
@@ -350,12 +355,25 @@ function drawBg(){
 function drawFighter(pk){
   const f=gs[pk],frames=getFrames(pk),FH=170;
   const img=frames[Math.min(f.frame,Math.max(0,frames.length-1))];
-  if(!img){ctx.fillStyle=pk==='p1'?'#8B6914':'#3a6b30';ctx.fillRect(f.x-45,f.y-FH,90,FH);return;}
+  if(!img){
+    ctx.fillStyle=pk==='p1'?'#8B6914':'#3a6b30';
+    ctx.fillRect(f.x-45,f.y-FH,90,FH);
+    ctx.fillStyle='#fff';ctx.font='bold 13px Arial';ctx.textAlign='center';
+    ctx.fillText(pk==='p1'?'MACHI':'MAURON',f.x,f.y-FH/2);
+    return;
+  }
   const sc=FH/img.height||1,dw=img.width*sc;
-  ctx.save();ctx.translate(f.x,f.y);ctx.scale(f.facing,-1);
+  ctx.save();
+  ctx.translate(f.x, f.y-FH);
+  if(f.facing<0) ctx.transform(-1,0,0,1,dw,0);
   if(f.state==='hurt')ctx.globalAlpha=0.65;
-  ctx.drawImage(img,-dw/2,0,dw,-FH);ctx.restore();
-  if(f.blocking){ctx.save();ctx.globalAlpha=0.28;ctx.fillStyle='#4af';ctx.beginPath();ctx.ellipse(f.x+(f.facing>0?30:-30),f.y-FH/2,35,68,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+  ctx.drawImage(img, f.facing>0 ? -dw/2 : dw/2-dw, 0, dw, FH);
+  ctx.restore();
+  if(f.blocking){
+    ctx.save();ctx.globalAlpha=0.28;ctx.fillStyle='#4af';
+    ctx.beginPath();ctx.ellipse(f.x+(f.facing>0?30:-30),f.y-FH/2,35,68,0,0,Math.PI*2);
+    ctx.fill();ctx.restore();
+  }
 }
 function drawHUD(){
   const bW=310,bH=20,spH=9,y1=12,y2=y1+bH+3;
