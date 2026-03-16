@@ -15,17 +15,27 @@ canvas{display:block;touch-action:none;}
 #loginScreen p{color:#aaa;font-size:clamp(12px,3vw,18px);margin-bottom:40px;}
 .btnGoogle{display:flex;align-items:center;gap:12px;background:#fff;color:#333;font-family:'Arial Black',sans-serif;font-size:clamp(14px,3.5vw,20px);padding:14px 28px;border:none;border-radius:10px;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
 .btnGoogle img{width:28px;}
-#lobbyScreen{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);gap:14px;}
+#lobbyScreen{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);gap:12px;}
 #lobbyScreen h2{font-size:clamp(22px,6vw,42px);color:#FFD700;margin-bottom:4px;}
 .userInfo{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.08);padding:10px 20px;border-radius:30px;}
 .userInfo img{width:36px;height:36px;border-radius:50%;}
 .userInfo span{font-size:14px;color:#ddd;}
-.btnMain{font-family:'Arial Black',sans-serif;font-size:clamp(13px,3.5vw,18px);padding:12px 32px;border:none;border-radius:10px;cursor:pointer;letter-spacing:1px;margin:4px;}
+.menuCards{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin:8px 0;}
+.menuCard{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:150px;padding:20px 12px;border-radius:14px;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;}
+.menuCard:hover{transform:scale(1.05);}
+.menuCard.active{border-color:#fff;}
+.menuCard .icon{font-size:36px;}
+.menuCard .label{font-family:'Arial Black',sans-serif;font-size:13px;text-align:center;letter-spacing:1px;}
+.cardCPU{background:linear-gradient(135deg,#3a006f,#9b00d4);}
+.cardMulti{background:linear-gradient(135deg,#003a8c,#0077ff);}
+.subMenu{width:100%;max-width:420px;background:rgba(255,255,255,0.05);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;align-items:center;}
+.subMenu h3{font-size:14px;color:#aaa;letter-spacing:2px;margin-bottom:4px;}
+.btnMain{font-family:'Arial Black',sans-serif;font-size:clamp(13px,3.5vw,16px);padding:11px 28px;border:none;border-radius:10px;cursor:pointer;letter-spacing:1px;margin:2px;}
 .btnCreate{background:linear-gradient(135deg,#FF6600,#FFD700);color:#000;}
 .btnCPU{background:linear-gradient(135deg,#6600ff,#cc00ff);color:#fff;}
 .btnJoin{background:linear-gradient(135deg,#0066ff,#00ccff);color:#fff;}
 .btnLogout{background:rgba(255,255,255,0.08);color:#aaa;font-size:12px;padding:8px 16px;}
-#roomCodeInput{font-family:'Arial Black',sans-serif;font-size:20px;padding:12px 20px;border-radius:8px;border:2px solid #0066ff;background:#111;color:#fff;text-align:center;letter-spacing:4px;width:150px;text-transform:uppercase;}
+#roomCodeInput{font-family:'Arial Black',sans-serif;font-size:20px;padding:11px 18px;border-radius:8px;border:2px solid #0066ff;background:#111;color:#fff;text-align:center;letter-spacing:4px;width:140px;text-transform:uppercase;}
 #joinForm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;}
 #waitingScreen{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);gap:20px;}
 #waitingScreen h2{font-size:clamp(20px,5vw,36px);color:#FFD700;}
@@ -36,7 +46,12 @@ canvas{display:block;touch-action:none;}
 #winScreen h2{font-size:clamp(32px,9vw,80px);color:#FFD700;text-shadow:0 0 40px #FF6600;text-align:center;}
 .btnRevanche{background:linear-gradient(135deg,#FF6600,#FFD700);color:#000;}
 .btnLobby{background:rgba(255,255,255,0.1);color:#fff;font-size:14px;padding:10px 24px;}
-#errMsg{color:#ff4444;font-size:13px;min-height:20px;text-align:center;}
+#salasList{width:100%;max-width:380px;max-height:160px;overflow-y:auto;margin:4px 0;}
+.salaItem{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px 16px;margin-bottom:6px;}
+.salaItem span{font-size:13px;color:#ddd;}
+.salaItem strong{color:#FFD700;}
+.btnUnirse{font-family:'Arial Black',sans-serif;font-size:11px;padding:6px 14px;background:linear-gradient(135deg,#0066ff,#00ccff);color:#fff;border:none;border-radius:6px;cursor:pointer;}
+.noSalas{font-size:12px;color:#555;text-align:center;padding:8px;}
 </style>
 </head>
 <body>
@@ -51,17 +66,41 @@ canvas{display:block;touch-action:none;}
 </div>
 
 <div class="screen hidden" id="lobbyScreen">
-  <h2>🥊 LOBBY</h2>
+  <h2>🥊 CAMPCON</h2>
   <div class="userInfo">
     <img id="userAvatar" src="" alt="">
     <span id="userName"></span>
   </div>
-  <button class="btnMain btnCPU" id="btnCPU">🤖 VS CPU</button>
-  <button class="btnMain btnCreate" id="btnCreate">⚡ CREAR SALA</button>
-  <div id="joinForm">
-    <input id="roomCodeInput" maxlength="4" placeholder="CÓDIGO"/>
-    <button class="btnMain btnJoin" id="btnJoin">UNIRSE</button>
+
+  <!-- Menú principal -->
+  <div class="menuCards">
+    <div class="menuCard cardCPU" id="cardCPU">
+      <div class="icon">🤖</div>
+      <div class="label">VS CPU</div>
+    </div>
+    <div class="menuCard cardMulti" id="cardMulti">
+      <div class="icon">🌐</div>
+      <div class="label">MULTIJUGADOR</div>
+    </div>
   </div>
+
+  <!-- Sub-menú CPU -->
+  <div class="subMenu hidden" id="subCPU">
+    <h3>VS CPU</h3>
+    <button class="btnMain btnCPU" id="btnCPU">⚡ JUGAR AHORA</button>
+  </div>
+
+  <!-- Sub-menú Multijugador -->
+  <div class="subMenu hidden" id="subMulti">
+    <h3>MULTIJUGADOR</h3>
+    <button class="btnMain btnCreate" id="btnCreate">➕ CREAR SALA</button>
+    <div id="salasList"></div>
+    <div id="joinForm">
+      <input id="roomCodeInput" maxlength="4" placeholder="CÓDIGO"/>
+      <button class="btnMain btnJoin" id="btnJoin">UNIRSE</button>
+    </div>
+  </div>
+
   <p id="errMsg"></p>
   <button class="btnMain btnLogout" id="btnLogout">Cerrar sesión</button>
 </div>
@@ -117,11 +156,44 @@ let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null; // 'cpu
 $('btnGoogle').onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>console.error(e));
 $('btnLogout').onclick=()=>signOut(auth);
 onAuthStateChanged(auth,user=>{
-  if(user){currentUser=user;$('userName').textContent=user.displayName||user.email;$('userAvatar').src=user.photoURL||'';show('lobbyScreen');}
+  if(user){currentUser=user;$('userName').textContent=user.displayName||user.email;$('userAvatar').src=user.photoURL||'';show('lobbyScreen');watchSalas();}
   else{currentUser=null;show('loginScreen');}
 });
 
+// ── MENU CARDS ───────────────────────────────────────────────────
+$('cardCPU').onclick=()=>{
+  $('subCPU').classList.remove('hidden');
+  $('subMulti').classList.add('hidden');
+  $('cardCPU').classList.add('active');
+  $('cardMulti').classList.remove('active');
+};
+$('cardMulti').onclick=()=>{
+  $('subMulti').classList.remove('hidden');
+  $('subCPU').classList.add('hidden');
+  $('cardMulti').classList.add('active');
+  $('cardCPU').classList.remove('active');
+};
+
 // ── ROOM ─────────────────────────────────────────────────────────
+function watchSalas(){
+  const salasRef=ref(db,'rooms');
+  onValue(salasRef,snap=>{
+    const list=$('salasList');
+    const d=snap.val();
+    if(!d){list.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
+    const abiertas=Object.entries(d).filter(([k,v])=>v.status==='waiting'&&v.host!==currentUser?.uid);
+    if(!abiertas.length){list.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
+    list.innerHTML=abiertas.map(([code,v])=>`
+      <div class="salaItem">
+        <span><strong>${v.hostName||'Alguien'}</strong> creó esta sala <strong>${code}</strong></span>
+        <button class="btnUnirse" onclick="joinSala('${code}')">UNIRSE</button>
+      </div>`).join('');
+  });
+}
+window.joinSala=async(code)=>{
+  $('roomCodeInput').value=code;
+  $('btnJoin').click();
+};
 function genCode(){return Math.random().toString(36).substr(2,4).toUpperCase();}
 
 $('btnCreate').onclick=async()=>{
