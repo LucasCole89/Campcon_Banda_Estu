@@ -2,60 +2,81 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, orientation=landscape">
+<meta name="screen-orientation" content="landscape">
 <title>CampCon ⚡</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{background:#0a0a1a;overflow:hidden;width:100vw;height:100vh;font-family:'Arial Black',sans-serif;color:#fff;display:flex;align-items:center;justify-content:center;}
+html,body{
+  background:#0a0a1a;overflow:hidden;
+  width:100vw;height:100vh;
+  font-family:'Arial Black',sans-serif;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+}
 canvas{display:block;touch-action:none;}
-.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;padding:20px;}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;padding:20px;}
 .screen.hidden{display:none;}
 #loginScreen{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);}
-#loginScreen h1{font-size:clamp(36px,10vw,72px);color:#FFD700;text-shadow:0 0 30px #FF6600;letter-spacing:6px;margin-bottom:8px;}
-#loginScreen p{color:#aaa;font-size:clamp(12px,3vw,18px);margin-bottom:40px;}
-.btnGoogle{display:flex;align-items:center;gap:12px;background:#fff;color:#333;font-family:'Arial Black',sans-serif;font-size:clamp(14px,3.5vw,20px);padding:14px 28px;border:none;border-radius:10px;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
-.btnGoogle img{width:28px;}
-#lobbyScreen{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);gap:12px;}
-#lobbyScreen h2{font-size:clamp(22px,6vw,42px);color:#FFD700;margin-bottom:4px;}
-.userInfo{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.08);padding:10px 20px;border-radius:30px;}
-.userInfo img{width:36px;height:36px;border-radius:50%;}
-.userInfo span{font-size:14px;color:#ddd;}
-.menuCards{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin:8px 0;}
-.menuCard{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:150px;padding:20px 12px;border-radius:14px;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;}
-.menuCard:hover{transform:scale(1.05);}
+#loginScreen h1{font-size:clamp(28px,6vw,60px);color:#FFD700;text-shadow:0 0 30px #FF6600;letter-spacing:6px;margin-bottom:6px;}
+#loginScreen p{color:#aaa;font-size:clamp(11px,2.5vw,16px);margin-bottom:30px;}
+.btnGoogle{display:flex;align-items:center;gap:12px;background:#fff;color:#333;font-family:'Arial Black',sans-serif;font-size:clamp(13px,2.5vw,18px);padding:12px 24px;border:none;border-radius:10px;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
+.btnGoogle img{width:24px;}
+#lobbyScreen{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);gap:10px;}
+#lobbyScreen h2{font-size:clamp(18px,4vw,36px);color:#FFD700;margin-bottom:2px;}
+.userInfo{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.08);padding:8px 16px;border-radius:30px;}
+.userInfo img{width:30px;height:30px;border-radius:50%;}
+.userInfo span{font-size:13px;color:#ddd;}
+.menuCards{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.menuCard{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:130px;padding:16px 10px;border-radius:12px;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;}
+.menuCard:hover,.menuCard:active{transform:scale(1.05);}
 .menuCard.active{border-color:#fff;}
-.menuCard .icon{font-size:36px;}
-.menuCard .label{font-family:'Arial Black',sans-serif;font-size:13px;text-align:center;letter-spacing:1px;}
+.menuCard .icon{font-size:28px;}
+.menuCard .label{font-family:'Arial Black',sans-serif;font-size:12px;text-align:center;letter-spacing:1px;}
 .cardCPU{background:linear-gradient(135deg,#3a006f,#9b00d4);}
 .cardMulti{background:linear-gradient(135deg,#003a8c,#0077ff);}
-.subMenu{width:100%;max-width:420px;background:rgba(255,255,255,0.05);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;align-items:center;}
-.subMenu h3{font-size:14px;color:#aaa;letter-spacing:2px;margin-bottom:4px;}
-.btnMain{font-family:'Arial Black',sans-serif;font-size:clamp(13px,3.5vw,16px);padding:11px 28px;border:none;border-radius:10px;cursor:pointer;letter-spacing:1px;margin:2px;}
+.subMenu{width:100%;max-width:400px;background:rgba(255,255,255,0.05);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.subMenu h3{font-size:12px;color:#aaa;letter-spacing:2px;}
+.btnMain{font-family:'Arial Black',sans-serif;font-size:clamp(12px,2.5vw,15px);padding:10px 24px;border:none;border-radius:10px;cursor:pointer;letter-spacing:1px;margin:2px;}
 .btnCreate{background:linear-gradient(135deg,#FF6600,#FFD700);color:#000;}
 .btnCPU{background:linear-gradient(135deg,#6600ff,#cc00ff);color:#fff;}
 .btnJoin{background:linear-gradient(135deg,#0066ff,#00ccff);color:#fff;}
-.btnLogout{background:rgba(255,255,255,0.08);color:#aaa;font-size:12px;padding:8px 16px;}
-#roomCodeInput{font-family:'Arial Black',sans-serif;font-size:20px;padding:11px 18px;border-radius:8px;border:2px solid #0066ff;background:#111;color:#fff;text-align:center;letter-spacing:4px;width:140px;text-transform:uppercase;}
+.btnLogout{background:rgba(255,255,255,0.08);color:#aaa;font-size:11px;padding:6px 14px;}
+#roomCodeInput{font-family:'Arial Black',sans-serif;font-size:18px;padding:9px 16px;border-radius:8px;border:2px solid #0066ff;background:#111;color:#fff;text-align:center;letter-spacing:4px;width:130px;text-transform:uppercase;}
 #joinForm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;}
-#waitingScreen{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);gap:20px;}
-#waitingScreen h2{font-size:clamp(20px,5vw,36px);color:#FFD700;}
-.roomCode{font-size:clamp(36px,10vw,64px);color:#00ccff;letter-spacing:8px;background:rgba(0,204,255,0.1);padding:16px 32px;border-radius:12px;border:2px solid #00ccff;}
-.waitDots{font-size:18px;color:#aaa;}
-.btnCancel{background:rgba(255,255,255,0.1);color:#aaa;font-size:14px;padding:10px 24px;}
-#winScreen{background:rgba(0,0,0,0.92);gap:20px;}
-#winScreen h2{font-size:clamp(32px,9vw,80px);color:#FFD700;text-shadow:0 0 40px #FF6600;text-align:center;}
-.btnRevanche{background:linear-gradient(135deg,#FF6600,#FFD700);color:#000;}
-.btnLobby{background:rgba(255,255,255,0.1);color:#fff;font-size:14px;padding:10px 24px;}
-#salasList{width:100%;max-width:380px;max-height:160px;overflow-y:auto;margin:4px 0;}
-.salaItem{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px 16px;margin-bottom:6px;}
-.salaItem span{font-size:13px;color:#ddd;}
+#salasList{width:100%;max-width:380px;max-height:120px;overflow-y:auto;}
+.salaItem{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:8px 12px;margin-bottom:5px;}
+.salaItem span{font-size:12px;color:#ddd;}
 .salaItem strong{color:#FFD700;}
-.btnUnirse{font-family:'Arial Black',sans-serif;font-size:11px;padding:6px 14px;background:linear-gradient(135deg,#0066ff,#00ccff);color:#fff;border:none;border-radius:6px;cursor:pointer;}
-.noSalas{font-size:12px;color:#555;text-align:center;padding:8px;}
+.btnUnirse{font-family:'Arial Black',sans-serif;font-size:10px;padding:5px 12px;background:linear-gradient(135deg,#0066ff,#00ccff);color:#fff;border:none;border-radius:6px;cursor:pointer;}
+.noSalas{font-size:11px;color:#555;text-align:center;padding:6px;}
+#waitingScreen{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);gap:16px;}
+#waitingScreen h2{font-size:clamp(18px,4vw,32px);color:#FFD700;}
+.roomCode{font-size:clamp(28px,7vw,52px);color:#00ccff;letter-spacing:8px;background:rgba(0,204,255,0.1);padding:12px 28px;border-radius:12px;border:2px solid #00ccff;}
+.waitDots{font-size:16px;color:#aaa;}
+.btnCancel{background:rgba(255,255,255,0.1);color:#aaa;font-size:13px;padding:8px 20px;}
+#winScreen{background:rgba(0,0,0,0.92);gap:16px;}
+#winScreen h2{font-size:clamp(28px,7vw,64px);color:#FFD700;text-shadow:0 0 40px #FF6600;text-align:center;}
+.btnRevanche{background:linear-gradient(135deg,#FF6600,#FFD700);color:#000;}
+.btnLobby{background:rgba(255,255,255,0.1);color:#fff;font-size:13px;padding:9px 20px;}
+#errMsg{color:#ff4444;font-size:12px;min-height:18px;text-align:center;}
+
+/* ROTATE OVERLAY */
+#rotateMsg{position:fixed;inset:0;background:#0a0a1a;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:999;font-family:'Arial Black',sans-serif;}
+#rotateMsg .icon{font-size:64px;margin-bottom:16px;animation:spin 2s linear infinite;}
+#rotateMsg p{color:#FFD700;font-size:20px;text-align:center;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+@media(orientation:portrait){#rotateMsg{display:flex;}}
 </style>
 </head>
 <body>
 
+<!-- ROTATE OVERLAY -->
+<div id="rotateMsg">
+  <div class="icon">📱</div>
+  <p>Rotá el teléfono<br>para jugar 🕹️</p>
+</div>
+
+<!-- LOGIN -->
 <div class="screen" id="loginScreen">
   <h1>⚡ CAMPCON ⚡</h1>
   <p>Banda del Estu — Machi vs Mauron</p>
@@ -65,32 +86,18 @@ canvas{display:block;touch-action:none;}
   </button>
 </div>
 
+<!-- LOBBY -->
 <div class="screen hidden" id="lobbyScreen">
   <h2>🥊 CAMPCON</h2>
-  <div class="userInfo">
-    <img id="userAvatar" src="" alt="">
-    <span id="userName"></span>
-  </div>
-
-  <!-- Menú principal -->
+  <div class="userInfo"><img id="userAvatar" src="" alt=""><span id="userName"></span></div>
   <div class="menuCards">
-    <div class="menuCard cardCPU" id="cardCPU">
-      <div class="icon">🤖</div>
-      <div class="label">VS CPU</div>
-    </div>
-    <div class="menuCard cardMulti" id="cardMulti">
-      <div class="icon">🌐</div>
-      <div class="label">MULTIJUGADOR</div>
-    </div>
+    <div class="menuCard cardCPU" id="cardCPU"><div class="icon">🤖</div><div class="label">VS CPU</div></div>
+    <div class="menuCard cardMulti" id="cardMulti"><div class="icon">🌐</div><div class="label">MULTIJUGADOR</div></div>
   </div>
-
-  <!-- Sub-menú CPU -->
   <div class="subMenu hidden" id="subCPU">
     <h3>VS CPU</h3>
     <button class="btnMain btnCPU" id="btnCPU">⚡ JUGAR AHORA</button>
   </div>
-
-  <!-- Sub-menú Multijugador -->
   <div class="subMenu hidden" id="subMulti">
     <h3>MULTIJUGADOR</h3>
     <button class="btnMain btnCreate" id="btnCreate">➕ CREAR SALA</button>
@@ -100,11 +107,11 @@ canvas{display:block;touch-action:none;}
       <button class="btnMain btnJoin" id="btnJoin">UNIRSE</button>
     </div>
   </div>
-
   <p id="errMsg"></p>
   <button class="btnMain btnLogout" id="btnLogout">Cerrar sesión</button>
 </div>
 
+<!-- WAITING -->
 <div class="screen hidden" id="waitingScreen">
   <h2>Compartí el código</h2>
   <div class="roomCode" id="displayCode">----</div>
@@ -112,8 +119,10 @@ canvas{display:block;touch-action:none;}
   <button class="btnMain btnCancel" id="btnCancel">Cancelar</button>
 </div>
 
+<!-- CANVAS -->
 <canvas id="c" style="display:none;"></canvas>
 
+<!-- WIN -->
 <div class="screen hidden" id="winScreen">
   <h2 id="winTxt"></h2>
   <button class="btnMain btnRevanche" id="btnRevanche">🥊 REVANCHA</button>
@@ -134,12 +143,10 @@ const firebaseConfig={
   messagingSenderId:"790816311475",
   appId:"1:790816311475:web:7835a520eaa7545d2cc8c6"
 };
-
 const fbApp=initializeApp(firebaseConfig);
 const auth=getAuth(fbApp);
 const db=getDatabase(fbApp);
 
-// ── UTILS ────────────────────────────────────────────────────────
 const $=id=>document.getElementById(id);
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');}
 function showCanvas(){document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));$('c').style.display='block';}
@@ -148,13 +155,11 @@ function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textCon
 
 // ── CONSTANTS ────────────────────────────────────────────────────
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
-const W=900,H=520,FLOOR=H-35,GR=0.7,SPMAX=100,TICK=33;
-const FH=300;
-const FW=110;
+const W=900,H=500,FLOOR=H-38,GR=0.55,SPMAX=100,TICK=33;
+const FH=290, FW=80; // altura y ancho hitbox del personaje
 
 // ── AUTH ─────────────────────────────────────────────────────────
-let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null; // 'cpu'|'online'
-
+let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null;
 $('btnGoogle').onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>console.error(e));
 $('btnLogout').onclick=()=>signOut(auth);
 onAuthStateChanged(auth,user=>{
@@ -162,21 +167,11 @@ onAuthStateChanged(auth,user=>{
   else{currentUser=null;show('loginScreen');}
 });
 
-// ── MENU CARDS ───────────────────────────────────────────────────
-$('cardCPU').onclick=()=>{
-  $('subCPU').classList.remove('hidden');
-  $('subMulti').classList.add('hidden');
-  $('cardCPU').classList.add('active');
-  $('cardMulti').classList.remove('active');
-};
-$('cardMulti').onclick=()=>{
-  $('subMulti').classList.remove('hidden');
-  $('subCPU').classList.add('hidden');
-  $('cardMulti').classList.add('active');
-  $('cardCPU').classList.remove('active');
-};
+// ── MENU ─────────────────────────────────────────────────────────
+$('cardCPU').onclick=()=>{$('subCPU').classList.remove('hidden');$('subMulti').classList.add('hidden');$('cardCPU').classList.add('active');$('cardMulti').classList.remove('active');};
+$('cardMulti').onclick=()=>{$('subMulti').classList.remove('hidden');$('subCPU').classList.add('hidden');$('cardMulti').classList.add('active');$('cardCPU').classList.remove('active');};
 
-// ── ROOM ─────────────────────────────────────────────────────────
+// ── SALAS ─────────────────────────────────────────────────────────
 function watchSalas(){
   const salasRef=ref(db,'rooms');
   onValue(salasRef,snap=>{
@@ -185,40 +180,23 @@ function watchSalas(){
     if(!d){list.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
     const abiertas=Object.entries(d).filter(([k,v])=>v.status==='waiting'&&v.host!==currentUser?.uid);
     if(!abiertas.length){list.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
-    list.innerHTML=abiertas.map(([code,v])=>`
-      <div class="salaItem">
-        <span><strong>${v.hostName||'Alguien'}</strong> creó esta sala <strong>${code}</strong></span>
-        <button class="btnUnirse" onclick="joinSala('${code}')">UNIRSE</button>
-      </div>`).join('');
+    list.innerHTML=abiertas.map(([code,v])=>`<div class="salaItem"><span><strong>${v.hostName||'Alguien'}</strong> — <strong>${code}</strong></span><button class="btnUnirse" onclick="joinSala('${code}')">UNIRSE</button></div>`).join('');
   });
 }
-window.joinSala=async(code)=>{
-  $('roomCodeInput').value=code;
-  $('btnJoin').click();
-};
-function genCode(){return Math.random().toString(36).substr(2,4).toUpperCase();}
+window.joinSala=async(code)=>{$('roomCodeInput').value=code;$('btnJoin').click();};
 
+// ── ROOM ─────────────────────────────────────────────────────────
+function genCode(){return Math.random().toString(36).substr(2,4).toUpperCase();}
 $('btnCreate').onclick=async()=>{
   if(!currentUser){err('Necesitás estar logueado');return;}
   try{
-    roomCode=genCode();
-    roomRef=ref(db,`rooms/${roomCode}`);
-    await set(roomRef,{
-      host:currentUser.uid,hostName:currentUser.displayName,
-      guest:null,guestName:null,status:'waiting',state:null
-    });
+    roomCode=genCode();roomRef=ref(db,`rooms/${roomCode}`);
+    await set(roomRef,{host:currentUser.uid,hostName:currentUser.displayName,guest:null,guestName:null,status:'waiting',state:null});
     myRole='host';vsMode='online';
-    $('displayCode').textContent=roomCode;
-    $('waitMsg').textContent='Esperando al rival...';
-    show('waitingScreen');
-    onValue(roomRef,snap=>{
-      const d=snap.val();
-      if(!d)return;
-      if(d.status==='ready'&&d.guest){off(roomRef);startGame();}
-    });
-  }catch(e){err('Error: '+e.message);console.error(e);}
+    $('displayCode').textContent=roomCode;$('waitMsg').textContent='Esperando al rival...';show('waitingScreen');
+    onValue(roomRef,snap=>{const d=snap.val();if(!d)return;if(d.status==='ready'&&d.guest){off(roomRef);startGame();}});
+  }catch(e){err('Error: '+e.message);}
 };
-
 $('btnJoin').onclick=async()=>{
   const code=$('roomCodeInput').value.trim().toUpperCase();
   if(code.length!==4){err('Código de 4 letras');return;}
@@ -230,21 +208,11 @@ $('btnJoin').onclick=async()=>{
     const d=snap.val();
     if(d.status!=='waiting'){err('Sala ya en juego');return;}
     await update(roomRef,{guest:currentUser.uid,guestName:currentUser.displayName,status:'ready'});
-    myRole='guest';vsMode='online';
-    startGame();
-  }catch(e){err('Error: '+e.message);console.error(e);}
+    myRole='guest';vsMode='online';startGame();
+  }catch(e){err('Error: '+e.message);}
 };
-
-$('btnCPU').onclick=()=>{
-  myRole='host';vsMode='cpu';roomCode=null;roomRef=null;
-  startGame();
-};
-
-$('btnCancel').onclick=async()=>{
-  if(roomRef)await remove(roomRef);
-  roomRef=null;roomCode=null;myRole=null;vsMode=null;
-  show('lobbyScreen');
-};
+$('btnCPU').onclick=()=>{myRole='host';vsMode='cpu';roomCode=null;roomRef=null;startGame();};
+$('btnCancel').onclick=async()=>{if(roomRef)await remove(roomRef);roomRef=null;roomCode=null;myRole=null;vsMode=null;show('lobbyScreen');};
 
 // ── SPRITES ──────────────────────────────────────────────────────
 function removeChroma(img){
@@ -253,14 +221,12 @@ function removeChroma(img){
   const d=ox.getImageData(0,0,oc.width,oc.height);
   for(let i=0;i<d.data.length;i+=4){
     const r=d.data[i],g=d.data[i+1],b=d.data[i+2];
-    // verde puro: g domina claramente sobre r y b
     if(g>120&&g-r>60&&g-b>60)d.data[i+3]=0;
-    // azul puro: b domina claramente
     else if(b>120&&b-r>60&&b-g>40)d.data[i+3]=0;
   }
   ox.putImageData(d,0,0);return oc;
 }
-async function loadImg(path, noChroma=false){
+async function loadImg(path,noChroma=false){
   return new Promise(res=>{
     const img=new Image();img.crossOrigin='anonymous';
     img.onload=()=>res(noChroma?img:removeChroma(img));
@@ -296,16 +262,8 @@ const PATHS={
 let SP={machi:{},mauron:{},bg:null},spritesLoaded=false;
 async function loadSprites(){
   if(spritesLoaded)return;
-  async function loadGroup(paths){
-    const out={};
-    for(const[k,arr]of Object.entries(paths))out[k]=await Promise.all(arr.map(p=>loadImg(p)));
-    return out;
-  }
-  [SP.machi,SP.mauron,SP.bg]=await Promise.all([
-    loadGroup(PATHS.machi),
-    loadGroup(PATHS.mauron),
-    loadImg('Escenarios_001_Estudiantil_v2.png', true) // sin chroma
-  ]);
+  async function loadGroup(paths){const out={};for(const[k,arr]of Object.entries(paths))out[k]=await Promise.all(arr.map(p=>loadImg(p)));return out;}
+  [SP.machi,SP.mauron,SP.bg]=await Promise.all([loadGroup(PATHS.machi),loadGroup(PATHS.mauron),loadImg('Escenarios_001_Estudiantil_v2.png',true)]);
   spritesLoaded=true;
 }
 
@@ -315,7 +273,7 @@ function resize(){
   const dpr=window.devicePixelRatio||1;
   const s=Math.min(innerWidth/W,innerHeight/H);
   canvas.style.width=s*W+'px';canvas.style.height=s*H+'px';
-  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 resize();window.addEventListener('resize',resize);
@@ -328,8 +286,8 @@ let inputRef=null,oppInputRef=null,stateRef=null;
 
 function initGS(){
   gs={
-    p1:{x:W*0.25,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:1,blocking:false,grounded:true,stTimer:0},
-    p2:{x:W*0.75,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:-1,blocking:false,grounded:true,stTimer:0},
+    p1:{x:W*0.28,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:1,blocking:false,grounded:true},
+    p2:{x:W*0.72,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:-1,blocking:false,grounded:true},
     timer:90,phase:'fight',specialName:null
   };
   fTimer={p1:0,p2:0};hitCD={p1:0,p2:0};inv={p1:0,p2:0};
@@ -356,84 +314,128 @@ function getFrames(pk,st){
 
 // ── DRAW ─────────────────────────────────────────────────────────
 function drawBg(){
-  if(SP.bg){const bW=W*1.4,bH=H*0.78;ctx.drawImage(SP.bg,-bgOffset*(bW-W),H-bH,bW,bH);}
-  else{const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0d1b2a');g.addColorStop(0.65,'#1b3a5c');g.addColorStop(1,'#c8a060');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.fillStyle='#a07040';ctx.fillRect(0,FLOOR,W,H-FLOOR);}
-  ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,FLOOR);ctx.lineTo(W,FLOOR);ctx.stroke();
+  if(SP.bg){
+    const bW=W*1.4,bH=H;
+    ctx.drawImage(SP.bg,-bgOffset*(bW-W),0,bW,bH);
+  } else {
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0d1b2a');g.addColorStop(1,'#c8a060');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  }
+  // floor line
+  ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(0,FLOOR);ctx.lineTo(W,FLOOR);ctx.stroke();
 }
+
 function drawFighter(pk){
-  const f=gs[pk],frames=getFrames(pk),FH=170;
+  const f=gs[pk],frames=getFrames(pk);
   const img=frames[Math.min(f.frame,Math.max(0,frames.length-1))];
   if(!img){
     ctx.fillStyle=pk==='p1'?'#8B6914':'#3a6b30';
-    ctx.fillRect(f.x-45,f.y-FH,90,FH);
-    ctx.fillStyle='#fff';ctx.font='bold 13px Arial';ctx.textAlign='center';
-    ctx.fillText(pk==='p1'?'MACHI':'MAURON',f.x,f.y-FH/2);
+    ctx.fillRect(f.x-FW/2,f.y-FH,FW,FH);
     return;
   }
-  const sc=FH/img.height||1,dw=img.width*sc;
+  // mantener aspect ratio, altura = FH
+  const sc=FH/img.height;
+  const dw=img.width*sc;
   ctx.save();
-  ctx.translate(f.x, f.y-FH);
-  if(f.facing<0) ctx.transform(-1,0,0,1,dw,0);
-  if(f.state==='hurt')ctx.globalAlpha=0.65;
-  ctx.drawImage(img, f.facing>0 ? -dw/2 : dw/2-dw, 0, dw, FH);
+  // si mira a la izquierda, flip horizontal
+  if(f.facing<0){
+    ctx.translate(f.x+dw/2,f.y-FH);
+    ctx.scale(-1,1);
+    ctx.drawImage(img,0,0,dw,FH);
+  } else {
+    ctx.translate(f.x-dw/2,f.y-FH);
+    ctx.drawImage(img,0,0,dw,FH);
+  }
+  if(f.state==='hurt')ctx.globalAlpha=0.5;
   ctx.restore();
+
+  // shield bloqueo
   if(f.blocking){
-    ctx.save();ctx.globalAlpha=0.28;ctx.fillStyle='#4af';
-    ctx.beginPath();ctx.ellipse(f.x+(f.facing>0?30:-30),f.y-FH/2,35,68,0,0,Math.PI*2);
+    ctx.save();ctx.globalAlpha=0.3;ctx.fillStyle='#4af';
+    ctx.beginPath();ctx.ellipse(f.x+(f.facing>0?dw*0.3:-dw*0.3),f.y-FH/2,40,75,0,0,Math.PI*2);
     ctx.fill();ctx.restore();
   }
 }
+
 function drawHUD(){
-  const bW=310,bH=20,spH=9,y1=12,y2=y1+bH+3;
-  const bar=(x,w,pct,right)=>{ctx.fillStyle='#111';ctx.fillRect(x,y1,w,bH);const fw=w*Math.max(0,pct);ctx.fillStyle='#e63946';ctx.fillRect(right?x+w-fw:x,y1,fw,bH);ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1;ctx.strokeRect(x,y1,w,bH);};
-  const spBar=(x,w,pct,col,right)=>{ctx.fillStyle='#111';ctx.fillRect(x,y2,w,spH);const fw=w*Math.max(0,pct);ctx.fillStyle=col;ctx.fillRect(right?x+w-fw:x,y2,fw,spH);ctx.strokeStyle=col;ctx.lineWidth=1;ctx.strokeRect(x,y2,w,spH);if(pct>=1){ctx.save();ctx.globalAlpha=0.5+0.5*Math.sin(Date.now()*0.008);ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.strokeRect(x,y2,w,spH);ctx.restore();}};
-  bar(10,bW,gs.p1.hp/100,false);spBar(10,bW,gs.p1.special/SPMAX,'#FFD700',false);
-  ctx.fillStyle='#fff';ctx.font='bold 12px Arial';ctx.textAlign='left';
-  ctx.fillText(vsMode==='cpu'?'VOS':'MACHI',12,y1+14);
-  bar(W-10-bW,bW,gs.p2.hp/100,true);spBar(W-10-bW,bW,gs.p2.special/SPMAX,'#00FF7F',true);
-  ctx.textAlign='right';ctx.fillText(vsMode==='cpu'?'CPU':'MAURON',W-12,y1+14);
-  ctx.fillStyle='rgba(0,0,0,0.7)';ctx.beginPath();ctx.roundRect(W/2-28,8,56,30,6);ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1;ctx.stroke();
-  ctx.fillStyle=gs.timer<=10?'#ff4444':'#fff';ctx.font='bold 22px Arial Black';ctx.textAlign='center';ctx.fillText(Math.ceil(gs.timer),W/2,30);
+  const bW=300,bH=18,spH=8,y1=10,y2=y1+bH+3;
+  const bar=(x,w,pct,right)=>{
+    ctx.fillStyle='#111';ctx.fillRect(x,y1,w,bH);
+    const fw=w*Math.max(0,Math.min(1,pct));
+    ctx.fillStyle='#e63946';ctx.fillRect(right?x+w-fw:x,y1,fw,bH);
+    ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;ctx.strokeRect(x,y1,w,bH);
+  };
+  const spBar=(x,w,pct,col,right)=>{
+    ctx.fillStyle='#111';ctx.fillRect(x,y2,w,spH);
+    const fw=w*Math.max(0,Math.min(1,pct));
+    ctx.fillStyle=col;ctx.fillRect(right?x+w-fw:x,y2,fw,spH);
+    ctx.strokeStyle=col;ctx.lineWidth=1;ctx.strokeRect(x,y2,w,spH);
+    if(pct>=1){ctx.save();ctx.globalAlpha=0.5+0.5*Math.sin(Date.now()*0.008);ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.strokeRect(x,y2,w,spH);ctx.restore();}
+  };
+  bar(10,bW,gs.p1.hp/100,false);
+  spBar(10,bW,gs.p1.special/SPMAX,'#FFD700',false);
+  ctx.fillStyle='#fff';ctx.font='bold 11px Arial';ctx.textAlign='left';
+  ctx.fillText(vsMode==='cpu'?'VOS':'MACHI',12,y1+13);
+
+  bar(W-10-bW,bW,gs.p2.hp/100,true);
+  spBar(W-10-bW,bW,gs.p2.special/SPMAX,'#00FF7F',true);
+  ctx.textAlign='right';
+  ctx.fillText(vsMode==='cpu'?'CPU':'MAURON',W-12,y1+13);
+
+  // timer
+  ctx.fillStyle='rgba(0,0,0,0.7)';ctx.beginPath();ctx.roundRect(W/2-26,8,52,28,6);ctx.fill();
+  ctx.fillStyle=gs.timer<=10?'#ff4444':'#fff';ctx.font='bold 20px Arial Black';ctx.textAlign='center';
+  ctx.fillText(Math.ceil(gs.timer),W/2,28);
+
   if(gs.p1.special>=SPMAX){ctx.save();ctx.globalAlpha=0.6+0.4*Math.sin(Date.now()*0.007);ctx.fillStyle='#FFD700';ctx.font='bold 9px Arial';ctx.textAlign='left';ctx.fillText('⚡LISTO!',12,y2+spH+10);ctx.restore();}
   if(gs.p2.special>=SPMAX){ctx.save();ctx.globalAlpha=0.6+0.4*Math.sin(Date.now()*0.007);ctx.fillStyle='#00FF7F';ctx.font='bold 9px Arial';ctx.textAlign='right';ctx.fillText('⚡LISTO!',W-12,y2+spH+10);ctx.restore();}
 }
+
+// botones — mismas coordenadas para draw y touch
+const BTNS={
+  L:  {x:60, y:H-70,r:32},
+  R:  {x:140,y:H-70,r:32},
+  UP: {x:100,y:H-145,r:32},
+  P:  {x:W-60, y:H-70,r:32},
+  B:  {x:W-140,y:H-70,r:32},
+  S:  {x:W-200,y:H-135,r:32},
+};
 function drawControls(){
-  ctx.save();ctx.globalAlpha=0.55;
-  const B=(x,y,r,lbl,c)=>{
-    ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=1.5;ctx.stroke();
-    ctx.fillStyle='#fff';ctx.font=`bold ${r*0.55}px Arial`;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(lbl,x,y);ctx.textBaseline='alphabetic';
+  ctx.save();ctx.globalAlpha=0.6;
+  const draw=(b,lbl,c)=>{
+    ctx.fillStyle=c;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font=`bold ${b.r*0.6}px Arial`;
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(lbl,b.x,b.y);
+    ctx.textBaseline='alphabetic';
   };
-  B(55, H-65, 35,'◀','#334');
-  B(135,H-65, 35,'▶','#334');
-  B(95, H-140,35,'▲','#343');
-  B(W-55, H-65, 35,'P','#443');
-  B(W-135,H-65, 35,'B','#433');
-  B(W-195,H-130,35,'S','#334');
+  draw(BTNS.L,'◀','#223');draw(BTNS.R,'▶','#223');draw(BTNS.UP,'▲','#232');
+  draw(BTNS.P,'P','#332');draw(BTNS.B,'B','#322');draw(BTNS.S,'S','#223');
   ctx.restore();
 }
+
 function drawSpecial(){
   const s=specialPhase;if(!s)return;
   const isMachi=s.name==='MACHI';
   const attackName=isMachi?'CHAMPAGNE SUPERNOVA':'ABSOLUT PLANTS';
   const col=isMachi?'#FFD700':'#00FF7F';
   ctx.save();
-  ctx.fillStyle=s.t%8<4?'rgba(255,200,0,0.18)':'rgba(0,50,200,0.18)';ctx.fillRect(0,0,W,H);
-  const maxX=W*0.55,px=s.t<35?-maxX+(s.t/35)*maxX:(s.t>110?maxX-((s.t-110)/40)*maxX*2:0);
+  ctx.fillStyle=s.t%8<4?'rgba(255,200,0,0.2)':'rgba(0,50,200,0.2)';ctx.fillRect(0,0,W,H);
+  const maxX=W*0.52,px=s.t<35?-maxX+(s.t/35)*maxX:(s.t>110?maxX-((s.t-110)/40)*maxX*2:0);
   ctx.translate(px,0);
-  const grad=ctx.createLinearGradient(0,H*0.28,maxX,H*0.72);
+  const grad=ctx.createLinearGradient(0,H*0.25,maxX,H*0.75);
   grad.addColorStop(0,'rgba(0,0,0,0.96)');grad.addColorStop(1,col+'22');
-  ctx.fillStyle=grad;ctx.fillRect(0,H*0.28,maxX,H*0.44);
-  ctx.strokeStyle=col;ctx.lineWidth=3;ctx.strokeRect(0,H*0.28,maxX,H*0.44);
+  ctx.fillStyle=grad;ctx.fillRect(0,H*0.25,maxX,H*0.5);
+  ctx.strokeStyle=col;ctx.lineWidth=3;ctx.strokeRect(0,H*0.25,maxX,H*0.5);
   const csp=isMachi?SP.machi:SP.mauron;
   const cf=(csp.celeb||[])[Math.floor(s.t/15)%Math.max(1,(csp.celeb||[]).length)];
-  if(cf){const ch=H*0.38,cw=cf.width*(ch/cf.height);ctx.save();ctx.translate(maxX*0.72,H*0.72);ctx.scale(-1,-1);ctx.drawImage(cf,-cw/2,0,cw,-ch);ctx.restore();}
-  ctx.shadowColor=col;ctx.shadowBlur=25;ctx.fillStyle=col;
-  ctx.font='bold '+Math.floor(W*0.042)+'px Arial Black';ctx.textAlign='center';ctx.fillText(attackName,maxX*0.42,H*0.52);
-  ctx.font='bold '+Math.floor(W*0.025)+'px Arial';ctx.fillStyle='#fff';ctx.shadowBlur=0;ctx.fillText(s.name,maxX*0.42,H*0.38);
+  if(cf){const ch=H*0.4,cw=cf.width*(ch/cf.height);ctx.save();ctx.translate(maxX*0.75,H*0.75);ctx.scale(-1,-1);ctx.drawImage(cf,-cw/2,0,cw,-ch);ctx.restore();}
+  ctx.shadowColor=col;ctx.shadowBlur=20;ctx.fillStyle=col;
+  ctx.font='bold '+Math.floor(W*0.038)+'px Arial Black';ctx.textAlign='center';
+  ctx.fillText(attackName,maxX*0.42,H*0.52);
+  ctx.fillStyle='#fff';ctx.font='bold '+Math.floor(W*0.022)+'px Arial';ctx.shadowBlur=0;
+  ctx.fillText(s.name,maxX*0.42,H*0.36);
   ctx.restore();
   s.t++;
   if(s.t>=150){specialPhase=null;gs.phase='fight';gs.specialName=null;}
@@ -446,102 +448,113 @@ function physicsTick(){
     if(p.state==='ko')return;
     if(inv[pk]>0)inv[pk]--;
     if(hitCD[pk]>0)hitCD[pk]--;
+    // gravity
     if(!p.grounded){p.vy+=GR;p.y+=p.vy;}
     if(p.y>=FLOOR){p.y=FLOOR;p.vy=0;p.grounded=true;if(p.state==='jump')p.state='idle';}
+    // frame advance
     fTimer[pk]++;
     const spd=p.state==='special'?5:p.state==='attack'?4:p.state==='walk'?6:9;
     if(fTimer[pk]>=spd){fTimer[pk]=0;p.frame++;}
     const fr=getFrames(pk);
     if(fr.length){
       const loop=!['ko','hurt'].includes(p.state);
-      if(p.frame>=fr.length)p.frame=loop?0:fr.length-1;
+      if(p.frame>=fr.length){
+        if(loop)p.frame=0;
+        else p.frame=fr.length-1;
+        // auto reset attack/hurt
+        if(p.state==='attack'){p.state='idle';p.frame=0;}
+        if(p.state==='hurt'){p.state='idle';p.frame=0;}
+      }
     }
-    if(p.state==='attack'&&p.frame>=(getFrames(pk,'attack').length||1)&&fTimer[pk]===0){p.state='idle';p.frame=0;}
-    if(p.state==='hurt'&&p.frame>=(getFrames(pk,'hurt').length||1)&&fTimer[pk]===0){p.state='idle';p.frame=0;}
   });
-  // no overlap — mantener distancia mínima entre personajes
-  const minDist=FW+20;
+  // collision — no overlap
+  const minDist=FW*1.1;
   if(Math.abs(gs.p1.x-gs.p2.x)<minDist){
-    const push=(minDist-Math.abs(gs.p1.x-gs.p2.x))/2;
-    if(gs.p1.x<gs.p2.x){gs.p1.x-=push;gs.p2.x+=push;}
+    const push=(minDist-Math.abs(gs.p1.x-gs.p2.x))/2+1;
+    if(gs.p1.x<=gs.p2.x){gs.p1.x-=push;gs.p2.x+=push;}
     else{gs.p1.x+=push;gs.p2.x-=push;}
   }
-  ['p1','p2'].forEach(pk=>{gs[pk].x=Math.max(50,Math.min(W-50,gs[pk].x));});
+  gs.p1.x=Math.max(60,Math.min(W-60,gs.p1.x));
+  gs.p2.x=Math.max(60,Math.min(W-60,gs.p2.x));
+  // scroll bg
+  const avgX=(gs.p1.x+gs.p2.x)/2;
+  bgOffset=Math.max(0,Math.min(1,(avgX-W*0.35)/(W*0.3)));
 }
 
 // ── APPLY INPUT ───────────────────────────────────────────────────
 function applyInput(pk,inp){
   const p=gs[pk];if(p.state==='ko')return;
   const ok=pk==='p1'?'p2':'p1',opp=gs[ok];
-  if(inp.left){p.x-=3.5;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
-  else if(inp.right){p.x+=3.5;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
+
+  // move
+  if(inp.left){p.x-=3;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
+  else if(inp.right){p.x+=3;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
   else if(p.state==='walk')p.state='idle';
-  p.x=Math.max(60,Math.min(W-60,p.x));
-  if(inp.jump&&p.grounded&&!['attack','special'].includes(p.state)){p.vy=-16;p.grounded=false;p.state='jump';p.frame=0;}
+
+  // jump
+  if(inp.jump&&p.grounded&&!['attack','special'].includes(p.state)){p.vy=-15;p.grounded=false;p.state='jump';p.frame=0;}
+
+  // face opponent
+  if(!['attack','special','hurt','ko','block'].includes(p.state))
+    p.facing=opp.x>p.x?1:-1;
+
+  // block
   p.blocking=!!(inp.block&&p.grounded);
   if(p.blocking&&!['attack','special'].includes(p.state))p.state='block';
   else if(!p.blocking&&p.state==='block')p.state='idle';
-  if(!['attack','special','hurt','ko','block'].includes(p.state))p.facing=opp.x>p.x?1:-1;
+
+  // ATTACK — hitbox basado en posición real del oponente
   if(inp.attack&&!['ko','hurt','special'].includes(p.state)&&hitCD[pk]===0){
     p.state='attack';p.frame=0;
-    // hitbox: desde el borde del personaje, alcance de 80px
-    const reach=80;
-    const bx=p.facing>0 ? p.x+FW/2 : p.x-FW/2-reach;
-    const by=p.y-FH;
-    const oppLeft=opp.x-FW/2, oppRight=opp.x+FW/2;
-    const oppTop=opp.y-FH, oppBot=opp.y;
-    if(bx<oppRight&&bx+reach>oppLeft&&by<oppBot&&by+FH>oppTop){
+    // rango de ataque: desde el centro del pj hasta 120px en dirección que mira
+    const range=120;
+    const dist=Math.abs(p.x-opp.x);
+    if(dist<=range){
       if(!opp.blocking&&inv[ok]===0){
-        opp.hp=Math.max(0,opp.hp-10);opp.state='hurt';inv[ok]=18;
-        p.special=Math.min(SPMAX,p.special+12);
+        opp.hp=Math.max(0,opp.hp-10);
+        opp.state='hurt';inv[ok]=20;
+        p.special=Math.min(SPMAX,p.special+15);
         if(opp.hp<=0){opp.state='ko';triggerEndGame();}
-      } else if(opp.blocking){opp.hp=Math.max(0,opp.hp-2);p.special=Math.min(SPMAX,p.special+5);}
-      hitCD[pk]=25;
+      } else if(opp.blocking){
+        opp.hp=Math.max(0,opp.hp-2);
+        p.special=Math.min(SPMAX,p.special+6);
+      }
+      hitCD[pk]=30;
     }
   }
+
+  // SPECIAL
   if(inp.special&&p.special>=SPMAX&&!['ko','hurt','special'].includes(p.state)){
     p.special=0;p.state='special';p.frame=0;
     gs.phase='special';gs.specialName=pk==='p1'?'MACHI':'MAURON';
     specialPhase={name:gs.specialName,t:0};
-    if(!opp.blocking){opp.hp=Math.max(0,opp.hp-35);if(opp.hp<=0){opp.state='ko';triggerEndGame();}}
-    else opp.hp=Math.max(0,opp.hp-7);
+    const dist=Math.abs(p.x-opp.x);
+    if(dist<=300){// especial tiene mayor alcance
+      if(!opp.blocking){opp.hp=Math.max(0,opp.hp-35);if(opp.hp<=0){opp.state='ko';triggerEndGame();}}
+      else opp.hp=Math.max(0,opp.hp-8);
+    }
   }
 }
 
-// ── CPU AI ────────────────────────────────────────────────────────
-let cpuTimer=0,cpuAction=null,cpuActionTimer=0;
+// ── CPU ───────────────────────────────────────────────────────────
+let cpuTick=0;
 const cpuInput={left:false,right:false,jump:false,attack:false,block:false,special:false};
 function updateCPU(){
-  const cpu=gs.p2,player=gs.p1;
-  if(cpu.state==='ko')return;
-  cpuTimer++;
-  const dist=Math.abs(cpu.x-player.x);
-  const rand=Math.random();
-
-  // limpiar inputs
+  const cpu=gs.p2,pl=gs.p1;if(cpu.state==='ko')return;
+  cpuTick++;
+  const dist=Math.abs(cpu.x-pl.x);
   cpuInput.left=false;cpuInput.right=false;cpuInput.jump=false;
   cpuInput.attack=false;cpuInput.block=false;cpuInput.special=false;
-
-  // acercarse si lejos
-  if(dist>150){
-    cpuInput.left=cpu.x>player.x;
-    cpuInput.right=cpu.x<player.x;
-  }
-
-  // atacar solo cada ~40 ticks y si está cerca
-  if(dist<140&&dist>30&&cpuTimer%40===0){
-    if(cpu.special>=SPMAX&&rand<0.2) cpuInput.special=true;
+  if(dist>130){cpuInput.left=cpu.x>pl.x;cpuInput.right=cpu.x<pl.x;}
+  if(dist<120&&dist>20&&cpuTick%35===0){
+    if(cpu.special>=SPMAX&&Math.random()<0.2)cpuInput.special=true;
     else cpuInput.attack=true;
   }
-
-  // salto ocasional
-  if(rand<0.008&&cpu.grounded&&dist>100) cpuInput.jump=true;
-
-  // bloquear si el jugador ataca y está cerca
-  if(player.state==='attack'&&dist<150&&rand<0.25) cpuInput.block=true;
+  if(Math.random()<0.006&&cpu.grounded)cpuInput.jump=true;
+  if(pl.state==='attack'&&dist<150&&Math.random()<0.3)cpuInput.block=true;
 }
 
-// ── GAME TICK (host) ──────────────────────────────────────────────
+// ── HOST TICK ─────────────────────────────────────────────────────
 function hostTick(){
   if(gs.phase==='fight'){
     if(vsMode==='cpu')updateCPU();
@@ -565,11 +578,10 @@ function setupSync(){
   onValue(oppInputRef,snap=>{const d=snap.val();if(d)Object.assign(oppInput,d);});
   if(myRole==='guest'){
     onValue(stateRef,snap=>{
-      const d=snap.val();
-      if(!d)return;
+      const d=snap.val();if(!d)return;
       Object.assign(gs.p1,d.p1);Object.assign(gs.p2,d.p2);
       gs.timer=d.timer;gs.phase=d.phase||'fight';
-      if(d.specialName&&!specialPhase){specialPhase={name:d.specialName,t:0};}
+      if(d.specialName&&!specialPhase)specialPhase={name:d.specialName,t:0};
     });
   }
 }
@@ -588,37 +600,34 @@ function startTimer(){
   clearInterval(timerInt);
   timerInt=setInterval(()=>{
     if(gs.phase!=='fight')return;
-    gs.timer--;
-    if(gs.timer<=0){clearInterval(timerInt);triggerEndGame();}
+    gs.timer--;if(gs.timer<=0){clearInterval(timerInt);triggerEndGame();}
   },1000);
 }
 function triggerEndGame(){
   if(gs.phase==='ko')return;
   gs.phase='ko';clearInterval(timerInt);
-  let winner;
+  let winner=null;
   if(gs.p1.hp<=0)winner='p2';
   else if(gs.p2.hp<=0)winner='p1';
-  else winner=gs.p1.hp>gs.p2.hp?'p1':gs.p2.hp>gs.p1.hp?'p2':null;
-  if(winner){gs[winner].state='celeb';const l=winner==='p1'?'p2':'p1';gs[l].state='ko';}
+  else if(gs.p1.hp>gs.p2.hp)winner='p1';
+  else if(gs.p2.hp>gs.p1.hp)winner='p2';
+  if(winner){gs[winner].state='celeb';gs[winner==='p1'?'p2':'p1'].state='ko';}
   const wname=winner==='p1'?(vsMode==='cpu'?'VOS':'MACHI'):winner==='p2'?(vsMode==='cpu'?'CPU':'MAURON'):'EMPATE';
-  setTimeout(()=>{
-    hideCanvas();
-    $('winTxt').textContent=wname==='EMPATE'?'¡EMPATE!':`¡GANÓ ${wname}!`;
-    show('winScreen');
-  },1800);
+  setTimeout(()=>{hideCanvas();$('winTxt').textContent=wname==='EMPATE'?'¡EMPATE!':`¡GANÓ ${wname}!`;show('winScreen');},1800);
 }
 
-// ── RENDER LOOP ───────────────────────────────────────────────────
+// ── RENDER ───────────────────────────────────────────────────────
 function renderLoop(){
   ctx.clearRect(0,0,W,H);
   drawBg();
-  if(gs.p1.x<gs.p2.x){drawFighter('p1');drawFighter('p2');}else{drawFighter('p2');drawFighter('p1');}
+  if(gs.p1.x<gs.p2.x){drawFighter('p1');drawFighter('p2');}
+  else{drawFighter('p2');drawFighter('p1');}
   if(gs.phase==='special')drawSpecial();
   drawHUD();drawControls();
   requestAnimationFrame(renderLoop);
 }
 
-// ── INPUT ─────────────────────────────────────────────────────────
+// ── KEYBOARD ─────────────────────────────────────────────────────
 const K={};
 window.addEventListener('keydown',e=>{
   if(K[e.code])return;K[e.code]=true;
@@ -641,38 +650,26 @@ window.addEventListener('keyup',e=>{
   pushInput();
 });
 
-// ── TOUCH ─────────────────────────────────────────────────────────
+// ── TOUCH ────────────────────────────────────────────────────────
 function setupTouch(){
-  function getCanvasPos(touch){
+  function getPos(touch){
     const rect=canvas.getBoundingClientRect();
-    return{
-      x:(touch.clientX-rect.left)*(W/rect.width),
-      y:(touch.clientY-rect.top)*(H/rect.height)
-    };
+    return{x:(touch.clientX-rect.left)*(W/rect.width),y:(touch.clientY-rect.top)*(H/rect.height)};
   }
-  const near=(p,cx,cy,r)=>Math.hypot(p.x-cx,p.y-cy)<r;
-
-  // botones — coordenadas en espacio del juego (W x H)
-  const BTN_L  ={x:55, y:H-65, r:55};
-  const BTN_R  ={x:135,y:H-65, r:55};
-  const BTN_UP ={x:95, y:H-140,r:55};
-  const BTN_P  ={x:W-55, y:H-65, r:55};
-  const BTN_B  ={x:W-135,y:H-65, r:55};
-  const BTN_S  ={x:W-195,y:H-130,r:55};
+  const near=(p,b)=>Math.hypot(p.x-b.x,p.y-b.y)<b.r*1.4;
 
   canvas.addEventListener('touchstart',e=>{
     e.preventDefault();
     for(const t of e.changedTouches){
-      const p=getCanvasPos(t);
-      if(near(p,BTN_L.x,BTN_L.y,BTN_L.r)){myInput.left=true;pushInput();}
-      if(near(p,BTN_R.x,BTN_R.y,BTN_R.r)){myInput.right=true;pushInput();}
-      if(near(p,BTN_UP.x,BTN_UP.y,BTN_UP.r)){myInput.jump=true;pushInput();setTimeout(()=>{myInput.jump=false;pushInput();},150);}
-      if(near(p,BTN_P.x,BTN_P.y,BTN_P.r)){myInput.attack=true;pushInput();setTimeout(()=>{myInput.attack=false;pushInput();},150);}
-      if(near(p,BTN_B.x,BTN_B.y,BTN_B.r)){myInput.block=true;pushInput();}
-      if(near(p,BTN_S.x,BTN_S.y,BTN_S.r)){myInput.special=true;pushInput();setTimeout(()=>{myInput.special=false;pushInput();},150);}
+      const p=getPos(t);
+      if(near(p,BTNS.L)){myInput.left=true;pushInput();}
+      if(near(p,BTNS.R)){myInput.right=true;pushInput();}
+      if(near(p,BTNS.UP)){myInput.jump=true;pushInput();setTimeout(()=>{myInput.jump=false;pushInput();},200);}
+      if(near(p,BTNS.P)){myInput.attack=true;pushInput();setTimeout(()=>{myInput.attack=false;pushInput();},200);}
+      if(near(p,BTNS.B)){myInput.block=true;pushInput();}
+      if(near(p,BTNS.S)){myInput.special=true;pushInput();setTimeout(()=>{myInput.special=false;pushInput();},200);}
     }
   },{passive:false});
-
   canvas.addEventListener('touchend',e=>{
     e.preventDefault();
     myInput.left=false;myInput.right=false;myInput.block=false;
@@ -680,25 +677,19 @@ function setupTouch(){
   },{passive:false});
 }
 
-// ── START GAME ────────────────────────────────────────────────────
+// ── START ────────────────────────────────────────────────────────
 async function startGame(){
-  show('waitingScreen');
-  $('waitMsg').textContent='Cargando sprites...';
+  show('waitingScreen');$('waitMsg').textContent='Cargando sprites...';
   await loadSprites();
   myKey=myRole==='host'?'p1':'p2';
   oppKey=myRole==='host'?'p2':'p1';
-  initGS();
-  setupSync();
-  setupTouch();
+  initGS();setupSync();setupTouch();
   showCanvas();
   requestAnimationFrame(renderLoop);
-  if(myRole==='host'){
-    startTimer();
-    setInterval(hostTick,TICK);
-  }
+  if(myRole==='host'){startTimer();setInterval(hostTick,TICK);}
 }
 
-// ── WIN BUTTONS ───────────────────────────────────────────────────
+// ── WIN ──────────────────────────────────────────────────────────
 $('btnRevanche').onclick=async()=>{
   if(vsMode==='cpu'){startGame();return;}
   if(myRole==='host'){await update(roomRef,{status:'ready',state:null});startGame();}
@@ -706,8 +697,7 @@ $('btnRevanche').onclick=async()=>{
 };
 $('btnLobbyBack').onclick=async()=>{
   if(roomRef){await remove(roomRef);roomRef=null;}
-  roomCode=null;myRole=null;vsMode=null;
-  show('lobbyScreen');
+  roomCode=null;myRole=null;vsMode=null;show('lobbyScreen');
 };
 </script>
 </body>
