@@ -148,9 +148,9 @@ function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textCon
 
 // ── CONSTANTS ────────────────────────────────────────────────────
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
-const W=900,H=520,FLOOR=H-40,GR=0.5,SPMAX=100,TICK=40;
-const FH=260;
-const FW=100;
+const W=900,H=520,FLOOR=H-35,GR=0.7,SPMAX=100,TICK=33;
+const FH=300;
+const FW=110;
 
 // ── AUTH ─────────────────────────────────────────────────────────
 let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null; // 'cpu'|'online'
@@ -328,8 +328,8 @@ let inputRef=null,oppInputRef=null,stateRef=null;
 
 function initGS(){
   gs={
-    p1:{x:200,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:1,blocking:false,grounded:true,stTimer:0},
-    p2:{x:700,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:-1,blocking:false,grounded:true,stTimer:0},
+    p1:{x:W*0.25,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:1,blocking:false,grounded:true,stTimer:0},
+    p2:{x:W*0.75,y:FLOOR,vy:0,hp:100,special:0,state:'idle',frame:0,facing:-1,blocking:false,grounded:true,stTimer:0},
     timer:90,phase:'fight',specialName:null
   };
   fTimer={p1:0,p2:0};hitCD={p1:0,p2:0};inv={p1:0,p2:0};
@@ -400,9 +400,19 @@ function drawHUD(){
 }
 function drawControls(){
   ctx.save();ctx.globalAlpha=0.55;
-  const B=(x,y,r,lbl,c)=>{ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${r*0.65}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(lbl,x,y);ctx.textBaseline='alphabetic';};
-  B(48,H-58,27,'◀','#334');B(112,H-58,27,'▶','#334');B(80,H-114,27,'▲','#343');
-  B(W-48,H-58,27,'P','#443');B(W-104,H-58,27,'B','#433');B(W-160,H-88,27,'S','#334');
+  const B=(x,y,r,lbl,c)=>{
+    ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font=`bold ${r*0.55}px Arial`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(lbl,x,y);ctx.textBaseline='alphabetic';
+  };
+  B(55, H-65, 35,'◀','#334');
+  B(135,H-65, 35,'▶','#334');
+  B(95, H-140,35,'▲','#343');
+  B(W-55, H-65, 35,'P','#443');
+  B(W-135,H-65, 35,'B','#433');
+  B(W-195,H-130,35,'S','#334');
   ctx.restore();
 }
 function drawSpecial(){
@@ -439,7 +449,7 @@ function physicsTick(){
     if(!p.grounded){p.vy+=GR;p.y+=p.vy;}
     if(p.y>=FLOOR){p.y=FLOOR;p.vy=0;p.grounded=true;if(p.state==='jump')p.state='idle';}
     fTimer[pk]++;
-    const spd=p.state==='special'?6:p.state==='attack'?5:p.state==='walk'?7:10;
+    const spd=p.state==='special'?5:p.state==='attack'?4:p.state==='walk'?6:9;
     if(fTimer[pk]>=spd){fTimer[pk]=0;p.frame++;}
     const fr=getFrames(pk);
     if(fr.length){
@@ -463,11 +473,11 @@ function physicsTick(){
 function applyInput(pk,inp){
   const p=gs[pk];if(p.state==='ko')return;
   const ok=pk==='p1'?'p2':'p1',opp=gs[ok];
-  if(inp.left){p.x-=2.5;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
-  else if(inp.right){p.x+=2.5;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
+  if(inp.left){p.x-=3.5;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
+  else if(inp.right){p.x+=3.5;if(p.grounded&&!['attack','special'].includes(p.state))p.state='walk';}
   else if(p.state==='walk')p.state='idle';
-  p.x=Math.max(50,Math.min(W-50,p.x));
-  if(inp.jump&&p.grounded&&!['attack','special'].includes(p.state)){p.vy=-11;p.grounded=false;p.state='jump';p.frame=0;}
+  p.x=Math.max(60,Math.min(W-60,p.x));
+  if(inp.jump&&p.grounded&&!['attack','special'].includes(p.state)){p.vy=-16;p.grounded=false;p.state='jump';p.frame=0;}
   p.blocking=!!(inp.block&&p.grounded);
   if(p.blocking&&!['attack','special'].includes(p.state))p.state='block';
   else if(!p.blocking&&p.state==='block')p.state='idle';
@@ -635,27 +645,34 @@ window.addEventListener('keyup',e=>{
 function setupTouch(){
   function getCanvasPos(touch){
     const rect=canvas.getBoundingClientRect();
-    const scaleX=W/rect.width;
-    const scaleY=H/rect.height;
     return{
-      x:(touch.clientX-rect.left)*scaleX,
-      y:(touch.clientY-rect.top)*scaleY
+      x:(touch.clientX-rect.left)*(W/rect.width),
+      y:(touch.clientY-rect.top)*(H/rect.height)
     };
   }
-  function near(p,cx,cy,r){return Math.hypot(p.x-cx,p.y-cy)<r;}
+  const near=(p,cx,cy,r)=>Math.hypot(p.x-cx,p.y-cy)<r;
+
+  // botones — coordenadas en espacio del juego (W x H)
+  const BTN_L  ={x:55, y:H-65, r:55};
+  const BTN_R  ={x:135,y:H-65, r:55};
+  const BTN_UP ={x:95, y:H-140,r:55};
+  const BTN_P  ={x:W-55, y:H-65, r:55};
+  const BTN_B  ={x:W-135,y:H-65, r:55};
+  const BTN_S  ={x:W-195,y:H-130,r:55};
 
   canvas.addEventListener('touchstart',e=>{
     e.preventDefault();
     for(const t of e.changedTouches){
       const p=getCanvasPos(t);
-      if(near(p,48,H-58,50)){myInput.left=true;pushInput();}
-      if(near(p,112,H-58,50)){myInput.right=true;pushInput();}
-      if(near(p,80,H-114,50)){myInput.jump=true;pushInput();setTimeout(()=>{myInput.jump=false;pushInput();},150);}
-      if(near(p,W-48,H-58,50)){myInput.attack=true;pushInput();setTimeout(()=>{myInput.attack=false;pushInput();},150);}
-      if(near(p,W-104,H-58,50)){myInput.block=true;pushInput();}
-      if(near(p,W-160,H-88,50)){myInput.special=true;pushInput();setTimeout(()=>{myInput.special=false;pushInput();},150);}
+      if(near(p,BTN_L.x,BTN_L.y,BTN_L.r)){myInput.left=true;pushInput();}
+      if(near(p,BTN_R.x,BTN_R.y,BTN_R.r)){myInput.right=true;pushInput();}
+      if(near(p,BTN_UP.x,BTN_UP.y,BTN_UP.r)){myInput.jump=true;pushInput();setTimeout(()=>{myInput.jump=false;pushInput();},150);}
+      if(near(p,BTN_P.x,BTN_P.y,BTN_P.r)){myInput.attack=true;pushInput();setTimeout(()=>{myInput.attack=false;pushInput();},150);}
+      if(near(p,BTN_B.x,BTN_B.y,BTN_B.r)){myInput.block=true;pushInput();}
+      if(near(p,BTN_S.x,BTN_S.y,BTN_S.r)){myInput.special=true;pushInput();setTimeout(()=>{myInput.special=false;pushInput();},150);}
     }
   },{passive:false});
+
   canvas.addEventListener('touchend',e=>{
     e.preventDefault();
     myInput.left=false;myInput.right=false;myInput.block=false;
