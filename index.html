@@ -283,7 +283,9 @@ let koSeq=null;
 function getSP(pk){return pk==='p1'?SP._p1:SP._p2;}
 function getFrames(pk,st){
   const s=getSP(pk),state=st||gs[pk].state;
-  const map={idle:'idle',walk:'walk',jump:'jump',attack:'attack',special:'special',block:'block',hurt:'hurt',ko:'ko',defeated:'defeated',celeb:'celeb'};
+  // si está atacando en el aire, usar el sprite aéreo
+  if(state==='attack'&&gs[pk]?._airAtk)return s[gs[pk]._airAtk]||s.attack||[];
+  const map={idle:'idle',walk:'walk',jump:'jump',attack:'attack',special:'special',block:'block',hurt:'hurt',ko:'ko',defeated:'defeated',celeb:'celeb',jumpKick:'jumpKick',jumpPunch:'jumpPunch'};
   return s[map[state]||'idle']||[];
 }
 
@@ -428,14 +430,15 @@ function drawControls(){
 function drawSpecial(){
   const s=specialPhase;if(!s)return;
   const pk=s.pk,ok=s.ok;
-  const launcherIsMachi=getSP(pk)===SP.machi;
+  // determinar personaje real del lanzador
+  const launcherSP=getSP(pk);
+  const launcherIsMachi=launcherSP===SP.machi;
 
   if(!s.frozenP1){s.frozenP1={...gs.p1};s.frozenP2={...gs.p2};}
   const fp1=s.frozenP1,fp2=s.frozenP2;
 
-  // fondo invertido
-  drawBg(true);
-  ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fillRect(0,0,W,H);
+  // fondo normal (sin invert)
+  drawBg(false);
 
   // fighters congelados
   function drawFrozen(pk2,fp){
@@ -452,7 +455,9 @@ function drawSpecial(){
   else{drawFrozen('p2',fp2);drawFrozen('p1',fp1);}
 
   const p=gs[pk];
+
   if(launcherIsMachi){
+    // MACHI: champagne — sprites de SP.machi.special
     const atkFrames=SP.machi?.special||[];
     const fi=Math.min(Math.floor(s.t/3),atkFrames.length-1);
     const af=atkFrames[fi];
@@ -465,12 +470,15 @@ function drawSpecial(){
     }
     if(fi>=4&&!s.damageDealt){
       s.damageDealt=true;
-      const champEnd=p.facing>0?p.x+250:p.x-250;
       const target=gs[ok];
-      if(target.state!=='ko'&&Math.abs(champEnd-target.x)<220)applySpecialDamage(ok,pk,target);
+      const champEnd=p.facing>0?p.x+250:p.x-250;
+      if(target.state!=='ko'&&Math.abs(champEnd-target.x)<220)
+        applySpecialDamage(ok,pk,target);
     }
   } else {
+    // MAURON: semillas t=0-40, plantas t=40+
     if(s.t<40){
+      // animación semillas — SP.mauron.special
       const spF=SP.mauron?.special||[];
       const fi=Math.min(Math.floor(s.t/10),spF.length-1);
       const sf=spF[fi];
@@ -482,6 +490,7 @@ function drawSpecial(){
         ctx.drawImage(sf,0,0,dw,FH);ctx.restore();
       }
     } else {
+      // plantas nacen en plantX — SP.mauron.plants
       const plants=SP.mauron?.plants||[];
       const fi=Math.min(Math.floor((s.t-40)/4),plants.length-1);
       const pf=plants[fi];
@@ -491,10 +500,11 @@ function drawSpecial(){
         ctx.save();ctx.translate(plantX,FLOOR);
         ctx.drawImage(pf,-pw/2,-ph,pw,ph);ctx.restore();
       }
-      if(fi>=3&&!s.damageDealt){
+      // daño donde nacen las plantas
+      if(fi>=2&&!s.damageDealt){
         s.damageDealt=true;
         const target=gs[ok];
-        if(Math.abs(plantX-target.x)<140)applySpecialDamage(ok,pk,target);
+        if(Math.abs(plantX-target.x)<120)applySpecialDamage(ok,pk,target);
       }
     }
   }
@@ -614,7 +624,7 @@ function physicsTick(){
       if(p.frame>=fr.length){
         if(!noLoop.includes(p.state))p.frame=0;
         else p.frame=fr.length-1;
-        if(p.state==='attack'){p.state='idle';p.frame=0;p._attackHit=false;}
+        if(p.state==='attack'){p.state='idle';p.frame=0;p._attackHit=false;p._airAtk=null;}
         if(p.state==='hurt'){p.state='idle';p.frame=0;}
       }
     }
