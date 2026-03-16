@@ -772,7 +772,11 @@ function launchGame(){
   initGS();setupSync();setupTouch();
   showCanvas();
   requestAnimationFrame(renderLoop);
-  if(myRole==='host'){startTimer();setInterval(hostTick,TICK);}
+  if(myRole==='host'){
+    startTimer();
+    if(!window._hostInterval)window._hostInterval=setInterval(hostTick,TICK);
+    else{clearInterval(window._hostInterval);window._hostInterval=setInterval(hostTick,TICK);}
+  }
 }
 
 // ── START ────────────────────────────────────────────────────────
