@@ -644,9 +644,10 @@ function applyInput(pk,inp){
   // special
   if(inp.special&&p.special>=SPMAX&&!['hurt','ko','defeated','special'].includes(p.state)){
     p.special=0;p.state='special';p.frame=0;
-    gs.phase='special';gs.specialName=pk==='p1'?'MACHI':'MAURON';
-    const plantX=pk==='p2'?p.x+(p.facing>0?220:-220):null;
-    specialPhase={name:gs.specialName,t:0,damageDealt:false,plantX};
+    gs.phase='special';
+    gs.specialName=getSP(pk)===SP.machi?'MACHI':'MAURON'; // nombre del personaje real
+    const plantX=pk==='p2'?p.x+(p.facing>0?220:-220):p.x+(p.facing>0?220:-220);
+    specialPhase={name:gs.specialName,pk,ok,t:0,damageDealt:false,plantX,frozenP1:null,frozenP2:null};
   }
 }
 
