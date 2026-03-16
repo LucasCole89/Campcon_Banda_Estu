@@ -111,6 +111,23 @@ canvas{display:block;touch-action:none;}
   <button class="btnMain btnLogout" id="btnLogout">Cerrar sesión</button>
 </div>
 
+<!-- CHAR SELECT -->
+<div class="screen hidden" id="selectScreen">
+  <h2 style="color:#FFD700;font-size:clamp(18px,4vw,32px);margin-bottom:12px;">⚡ ELEGÍ TU PERSONAJE ⚡</h2>
+  <div style="display:flex;gap:24px;justify-content:center;align-items:center;">
+    <div id="selCard0" onclick="selectChar(0)" style="cursor:pointer;padding:16px 20px;border-radius:14px;border:3px solid transparent;background:rgba(255,215,0,0.1);text-align:center;transition:all .2s;">
+      <canvas id="selCanvas0" width="140" height="200" style="display:block;margin:0 auto;"></canvas>
+      <div style="font-family:'Arial Black',sans-serif;font-size:16px;color:#FFD700;margin-top:8px;">MACHI</div>
+    </div>
+    <div style="font-family:'Arial Black',sans-serif;font-size:40px;color:#fff;opacity:0.5;">VS</div>
+    <div id="selCard1" onclick="selectChar(1)" style="cursor:pointer;padding:16px 20px;border-radius:14px;border:3px solid transparent;background:rgba(0,255,127,0.1);text-align:center;transition:all .2s;">
+      <canvas id="selCanvas1" width="140" height="200" style="display:block;margin:0 auto;"></canvas>
+      <div style="font-family:'Arial Black',sans-serif;font-size:16px;color:#00FF7F;margin-top:8px;">MAURON</div>
+    </div>
+  </div>
+  <p style="color:#aaa;font-size:13px;margin-top:12px;">Tocá el personaje que querés usar</p>
+</div>
+
 <!-- WAITING -->
 <div class="screen hidden" id="waitingScreen">
   <h2>Compartí el código</h2>
@@ -156,7 +173,7 @@ function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textCon
 // ── CONSTANTS ────────────────────────────────────────────────────
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
 const W=900,H=500,FLOOR=H-38,GR=0.55,SPMAX=100,TICK=33;
-const FH=290, FW=80; // altura y ancho hitbox del personaje
+const FH=248, FW=80; // 15% menos que 290
 
 // ── AUTH ─────────────────────────────────────────────────────────
 let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null;
@@ -296,8 +313,65 @@ function initGS(){
   oppInput={left:false,right:false,jump:false,attack:false,block:false,special:false};
 }
 
-// ── SPRITE HELPERS ───────────────────────────────────────────────
-function getSP(pk){return pk==='p1'?SP.machi:SP.mauron;}
+// ── CHAR SELECT ──────────────────────────────────────────────────
+let myCharChoice=null; // 'machi'|'mauron'
+let selIdleTimer=0,selIdleFrame=0;
+let selAnimId=null;
+
+function showSelectScreen(){
+  show('selectScreen');
+  // animar idle en los mini canvas
+  function animSel(){
+    selIdleTimer++;
+    if(selIdleTimer>8){selIdleTimer=0;selIdleFrame++;}
+    ['machi','mauron'].forEach((ch,i)=>{
+      const sc=document.getElementById('selCanvas'+i);
+      const sx=sc.getContext('2d');
+      sx.clearRect(0,0,140,200);
+      const frames=SP[ch]?.idle||[];
+      const img=frames[selIdleFrame%Math.max(1,frames.length)];
+      if(img){
+        const s=200/img.height,dw=img.width*s;
+        sx.drawImage(img,(140-dw)/2,0,dw,200);
+      }
+    });
+    selAnimId=requestAnimationFrame(animSel);
+  }
+  if(selAnimId)cancelAnimationFrame(selAnimId);
+  animSel();
+}
+
+window.selectChar=function(idx){
+  if(selAnimId)cancelAnimationFrame(selAnimId);
+  myCharChoice=idx===0?'machi':'mauron';
+  // highlight
+  document.getElementById('selCard'+idx).style.borderColor=idx===0?'#FFD700':'#00FF7F';
+  setTimeout(()=>launchGame(),400);
+};
+
+function launchGame(){
+  // P1 = myCharChoice, P2 = el otro
+  const chars=['machi','mauron'];
+  const p1char=myCharChoice;
+  const p2char=p1char==='machi'?'mauron':'machi';
+  startFight(p1char,p2char);
+}
+
+// ── START FIGHT ───────────────────────────────────────────────────
+function startFight(p1char,p2char){
+  // reasignar SP según personaje elegido
+  SP._p1=SP[p1char];
+  SP._p2=SP[p2char];
+  SP._p1name=p1char.toUpperCase();
+  SP._p2name=p2char.toUpperCase();
+  initGS();setupSync();setupTouch();
+  showCanvas();
+  requestAnimationFrame(renderLoop);
+  if(myRole==='host'){startTimer();setInterval(hostTick,TICK);}
+}
+
+// ── SPRITE HELPERS (usa _p1/_p2) ──────────────────────────────────
+function getSP(pk){return pk==='p1'?SP._p1:SP._p2;}
 function getFrames(pk,st){
   const s=getSP(pk),state=st||gs[pk].state;
   if(state==='idle')return s.idle||[];
@@ -334,23 +408,18 @@ function drawFighter(pk){
     ctx.fillRect(f.x-FW/2,f.y-FH,FW,FH);
     return;
   }
-  // mantener aspect ratio, altura = FH
-  const sc=FH/img.height;
-  const dw=img.width*sc;
+  const sc=FH/img.height,dw=img.width*sc;
   ctx.save();
-  // si mira a la izquierda, flip horizontal
-  if(f.facing<0){
-    ctx.translate(f.x+dw/2,f.y-FH);
-    ctx.scale(-1,1);
-    ctx.drawImage(img,0,0,dw,FH);
-  } else {
-    ctx.translate(f.x-dw/2,f.y-FH);
-    ctx.drawImage(img,0,0,dw,FH);
+  if(f.facing<0){ctx.translate(f.x+dw/2,f.y-FH);ctx.scale(-1,1);}
+  else{ctx.translate(f.x-dw/2,f.y-FH);}
+  ctx.drawImage(img,0,0,dw,FH);
+  // tint rojo si está siendo golpeado
+  if(f.state==='hurt'){
+    ctx.globalCompositeOperation='source-atop';
+    ctx.fillStyle='rgba(255,0,0,0.55)';
+    ctx.fillRect(0,0,dw,FH);
   }
-  if(f.state==='hurt')ctx.globalAlpha=0.5;
   ctx.restore();
-
-  // shield bloqueo
   if(f.blocking){
     ctx.save();ctx.globalAlpha=0.3;ctx.fillStyle='#4af';
     ctx.beginPath();ctx.ellipse(f.x+(f.facing>0?dw*0.3:-dw*0.3),f.y-FH/2,40,75,0,0,Math.PI*2);
@@ -492,7 +561,7 @@ function applyInput(pk,inp){
   else if(p.state==='walk')p.state='idle';
 
   // jump
-  if(inp.jump&&p.grounded&&!['attack','special'].includes(p.state)){p.vy=-15;p.grounded=false;p.state='jump';p.frame=0;}
+  if(inp.jump&&p.grounded&&!['attack','special'].includes(p.state)){p.vy=-20;p.grounded=false;p.state='jump';p.frame=0;}
 
   // face opponent
   if(!['attack','special','hurt','ko','block'].includes(p.state))
@@ -503,36 +572,45 @@ function applyInput(pk,inp){
   if(p.blocking&&!['attack','special'].includes(p.state))p.state='block';
   else if(!p.blocking&&p.state==='block')p.state='idle';
 
-  // ATTACK — hitbox basado en posición real del oponente
+  // ATTACK — solo conecta en frame de impacto (frame 2 en adelante)
   if(inp.attack&&!['ko','hurt','special'].includes(p.state)&&hitCD[pk]===0){
-    p.state='attack';p.frame=0;
-    // rango de ataque: desde el centro del pj hasta 120px en dirección que mira
-    const range=120;
+    if(p.state!=='attack'){p.state='attack';p.frame=0;}
+  }
+  // hit detection — solo en frames activos del ataque
+  if(p.state==='attack'&&p.frame>=1&&hitCD[pk]===0){
     const dist=Math.abs(p.x-opp.x);
-    if(dist<=range){
+    if(dist<=130){
       if(!opp.blocking&&inv[ok]===0){
         opp.hp=Math.max(0,opp.hp-10);
-        opp.state='hurt';inv[ok]=20;
+        opp.state='hurt';opp.frame=0;inv[ok]=22;
         p.special=Math.min(SPMAX,p.special+15);
         if(opp.hp<=0){opp.state='ko';triggerEndGame();}
       } else if(opp.blocking){
         opp.hp=Math.max(0,opp.hp-2);
         p.special=Math.min(SPMAX,p.special+6);
       }
-      hitCD[pk]=30;
+      hitCD[pk]=35;
     }
   }
 
-  // SPECIAL
+  // SPECIAL — solo si barra llena
   if(inp.special&&p.special>=SPMAX&&!['ko','hurt','special'].includes(p.state)){
     p.special=0;p.state='special';p.frame=0;
     gs.phase='special';gs.specialName=pk==='p1'?'MACHI':'MAURON';
     specialPhase={name:gs.specialName,t:0};
-    const dist=Math.abs(p.x-opp.x);
-    if(dist<=300){// especial tiene mayor alcance
-      if(!opp.blocking){opp.hp=Math.max(0,opp.hp-35);if(opp.hp<=0){opp.state='ko';triggerEndGame();}}
-      else opp.hp=Math.max(0,opp.hp-8);
-    }
+    // daño al terminar la animación (no instantáneo)
+    const targetKey=ok;
+    setTimeout(()=>{
+      if(gs[targetKey].state==='ko')return;
+      const d=Math.abs(gs[pk].x-gs[targetKey].x);
+      if(d<=350){
+        if(!gs[targetKey].blocking){
+          gs[targetKey].hp=Math.max(0,gs[targetKey].hp-35);
+          gs[targetKey].state='hurt';gs[targetKey].frame=0;inv[targetKey]=30;
+          if(gs[targetKey].hp<=0){gs[targetKey].state='ko';triggerEndGame();}
+        } else gs[targetKey].hp=Math.max(0,gs[targetKey].hp-8);
+      }
+    },1200);
   }
 }
 
@@ -683,10 +761,8 @@ async function startGame(){
   await loadSprites();
   myKey=myRole==='host'?'p1':'p2';
   oppKey=myRole==='host'?'p2':'p1';
-  initGS();setupSync();setupTouch();
-  showCanvas();
-  requestAnimationFrame(renderLoop);
-  if(myRole==='host'){startTimer();setInterval(hostTick,TICK);}
+  // ir a selección de personaje
+  showSelectScreen();
 }
 
 // ── WIN ──────────────────────────────────────────────────────────
