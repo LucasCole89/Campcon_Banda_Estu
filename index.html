@@ -626,15 +626,23 @@ function physicsTick(){
       }
     }
   });
-  // collision — no overlap
-  const minDist=FW*1.1;
-  if(Math.abs(gs.p1.x-gs.p2.x)<minDist){
-    const push=(minDist-Math.abs(gs.p1.x-gs.p2.x))/2+1;
-    if(gs.p1.x<=gs.p2.x){gs.p1.x-=push;gs.p2.x+=push;}
-    else{gs.p1.x+=push;gs.p2.x-=push;}
+  // collision — solo en el piso, en el aire pueden cruzarse
+  if(gs.p1.grounded&&gs.p2.grounded){
+    const minDist=FW*1.1;
+    if(Math.abs(gs.p1.x-gs.p2.x)<minDist){
+      const push=(minDist-Math.abs(gs.p1.x-gs.p2.x))/2+1;
+      if(gs.p1.x<=gs.p2.x){gs.p1.x-=push;gs.p2.x+=push;}
+      else{gs.p1.x+=push;gs.p2.x-=push;}
+    }
   }
   gs.p1.x=Math.max(60,Math.min(W-60,gs.p1.x));
   gs.p2.x=Math.max(60,Math.min(W-60,gs.p2.x));
+
+  // flip automático — si uno cruza al otro, se reorienta
+  if(!['attack','special','hurt','ko','block'].includes(gs.p1.state))
+    gs.p1.facing=gs.p2.x>gs.p1.x?1:-1;
+  if(!['attack','special','hurt','ko','block'].includes(gs.p2.state))
+    gs.p2.facing=gs.p1.x>gs.p2.x?1:-1;
   // scroll bg
   const avgX=(gs.p1.x+gs.p2.x)/2;
   bgOffset=Math.max(0,Math.min(1,(avgX-W*0.35)/(W*0.3)));
@@ -667,7 +675,7 @@ function applyInput(pk,inp){
     if(p.state!=='attack'){p.state='attack';p.frame=0;p._attackHit=false;}
   }
   // hit detection — frames activos, con cooldown para que dure más
-  if(p.state==='attack'&&p.frame>=1&&!p._attackHit&&hitCD[pk]===0){
+  if(p.state==='attack'&&p.frame>=1&&!p._attackHit){
     const dist=Math.abs(p.x-opp.x);
     if(dist<=130){
       p._attackHit=true;
