@@ -137,7 +137,7 @@ function hideCanvas(){$('c').style.display='none';}
 function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textContent='',3000);}
 
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
-const W=900,H=500,FLOOR=H-38,GR=0.9,SPMAX=100,TICK=33;
+const W=900,H=500,FLOOR=H-38,GR=0.75,SPMAX=100,TICK=33;
 const FH=248,FW=80;
 
 // ── AUTH ─────────────────────────────────────────────────────────
@@ -311,6 +311,10 @@ function drawFighterAt(pk,x,y,state,frame,facing,tint){
   if(!img)return;
   const sc=FH/img.height,dw=img.width*sc;
 
+  // offset especial para el sprite de puño de Mauron (más ancho, cuerpo corrido)
+  const isMauronPunch=getSP(pk)===SP.mauron&&state==='attack';
+  const offsetX=isMauronPunch?(facing>0?dw*0.18:-dw*0.18):0;
+
   let offC=null;
   if(tint){
     offC=document.createElement('canvas');offC.width=dw;offC.height=FH;
@@ -319,10 +323,9 @@ function drawFighterAt(pk,x,y,state,frame,facing,tint){
     ox.globalCompositeOperation='source-atop';
     ox.fillStyle=tint;ox.fillRect(0,0,dw,FH);
   }
-
   ctx.save();
-  if(facing<0){ctx.translate(x+dw/2,y-FH);ctx.scale(-1,1);}
-  else{ctx.translate(x-dw/2,y-FH);}
+  if(facing<0){ctx.translate(x+dw/2+offsetX,y-FH);ctx.scale(-1,1);}
+  else{ctx.translate(x-dw/2+offsetX,y-FH);}
   ctx.drawImage(offC||img,0,0,dw,FH);
   ctx.restore();
 }
@@ -615,7 +618,7 @@ function applyInput(pk,inp){
   if(inp.left){p.x-=4.5;if(p.grounded&&p.state!=='attack')p.state='walk';}
   else if(inp.right){p.x+=4.5;if(p.grounded&&p.state!=='attack')p.state='walk';}
   else if(p.state==='walk')p.state='idle';
-  if(inp.jump&&p.grounded&&p.state!=='attack'){p.vy=-14;p.grounded=false;p.state='jump';p.frame=0;}
+  if(inp.jump&&p.grounded&&p.state!=='attack'){p.vy=-17;p.grounded=false;p.state='jump';p.frame=0;}
   p.blocking=!!(inp.block&&p.grounded);
   if(p.blocking&&p.state!=='attack')p.state='block';
   else if(!p.blocking&&p.state==='block')p.state='idle';
