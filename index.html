@@ -260,10 +260,10 @@ function removeChroma(img){
   }
   ox.putImageData(d,0,0);return oc;
 }
-async function loadImg(path){
+async function loadImg(path, noChroma=false){
   return new Promise(res=>{
     const img=new Image();img.crossOrigin='anonymous';
-    img.onload=()=>res(removeChroma(img));
+    img.onload=()=>res(noChroma?img:removeChroma(img));
     img.onerror=()=>{console.warn('MISSING:',path);res(null);};
     img.src=BASE+path;
   });
@@ -284,7 +284,7 @@ const PATHS={
     idle:['Mauron/Mauron_Idle_01.png','Mauron/Mauron_Idle_02.png','Mauron/Mauron_Idle_03.png','Mauron/Mauron_Idle_04.png','Mauron/Mauron_Idle_05.png'],
     walk:['Mauron/Mauron_Walk_01.png','Mauron/Mauron_Walk_02.png','Mauron/Mauron_Walk_03.png','Mauron/Mauron_Walk_04.png'],
     jump:['Mauron/Mauron_Jump_01.png','Mauron/Mauron_Jump_02.png','Mauron/Mauron_Jump_03.png','Mauron/Mauron_Jump_04_aterrizaje.png'],
-    attack:['Mauron/Mauron_Punch_01.png','Mauron/Mauron_Punch_02.png'],
+    attack:['Mauron/Mauron_Punch_01.png'],
     special:['Mauron/Mauron_Special_Attack_01.png','Mauron/Mauron_Special_Attack_02.png','Mauron/Mauron_Special_Attack_03.png','Mauron/Mauron_Special_Attack_04.png'],
     plants:['Mauron/Mauron_Special_Attack_05_Modulo_Plantas.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_01.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_02.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_03.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_04.png'],
     block:['Mauron/Mauron_Block_01.png'],hurt:['Mauron/Mauron_Hit_against_01.png'],
@@ -301,7 +301,11 @@ async function loadSprites(){
     for(const[k,arr]of Object.entries(paths))out[k]=await Promise.all(arr.map(p=>loadImg(p)));
     return out;
   }
-  [SP.machi,SP.mauron,SP.bg]=await Promise.all([loadGroup(PATHS.machi),loadGroup(PATHS.mauron),loadImg('Escenarios_001_Estudiantil_v2.png')]);
+  [SP.machi,SP.mauron,SP.bg]=await Promise.all([
+    loadGroup(PATHS.machi),
+    loadGroup(PATHS.mauron),
+    loadImg('Escenarios_001_Estudiantil_v2.png', true) // sin chroma
+  ]);
   spritesLoaded=true;
 }
 
@@ -470,8 +474,13 @@ function applyInput(pk,inp){
   if(!['attack','special','hurt','ko','block'].includes(p.state))p.facing=opp.x>p.x?1:-1;
   if(inp.attack&&!['ko','hurt','special'].includes(p.state)&&hitCD[pk]===0){
     p.state='attack';p.frame=0;
-    const reach=90, bx=p.x+(p.facing>0?FW/2:-FW/2-reach);
-    if(bx<opp.x+FW/2&&bx+reach>opp.x-FW/2&&Math.abs(p.y-opp.y)<FH){
+    // hitbox: desde el borde del personaje, alcance de 80px
+    const reach=80;
+    const bx=p.facing>0 ? p.x+FW/2 : p.x-FW/2-reach;
+    const by=p.y-FH;
+    const oppLeft=opp.x-FW/2, oppRight=opp.x+FW/2;
+    const oppTop=opp.y-FH, oppBot=opp.y;
+    if(bx<oppRight&&bx+reach>oppLeft&&by<oppBot&&by+FH>oppTop){
       if(!opp.blocking&&inv[ok]===0){
         opp.hp=Math.max(0,opp.hp-10);opp.state='hurt';inv[ok]=18;
         p.special=Math.min(SPMAX,p.special+12);
@@ -624,23 +633,31 @@ window.addEventListener('keyup',e=>{
 
 // ── TOUCH ─────────────────────────────────────────────────────────
 function setupTouch(){
-  const s=()=>parseFloat(canvas.style.width)/W;
+  function getCanvasPos(touch){
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=W/rect.width;
+    const scaleY=H/rect.height;
+    return{
+      x:(touch.clientX-rect.left)*scaleX,
+      y:(touch.clientY-rect.top)*scaleY
+    };
+  }
+  function near(p,cx,cy,r){return Math.hypot(p.x-cx,p.y-cy)<r;}
+
   canvas.addEventListener('touchstart',e=>{
     e.preventDefault();
     for(const t of e.changedTouches){
-      const p={x:t.clientX/s(),y:t.clientY/s()};
-      const near=(cx,cy,r)=>Math.hypot(p.x-cx,p.y-cy)<r;
-      if(near(48,H-58,42)){myInput.left=true;pushInput();}
-      if(near(112,H-58,42)){myInput.right=true;pushInput();}
-      if(near(80,H-114,42)){myInput.jump=true;pushInput();setTimeout(()=>{myInput.jump=false;pushInput();},100);}
-      if(near(W-48,H-58,42)){myInput.attack=true;pushInput();setTimeout(()=>{myInput.attack=false;pushInput();},120);}
-      if(near(W-104,H-58,42)){myInput.block=true;pushInput();}
-      if(near(W-160,H-88,42)){myInput.special=true;pushInput();setTimeout(()=>{myInput.special=false;pushInput();},120);}
+      const p=getCanvasPos(t);
+      if(near(p,48,H-58,50)){myInput.left=true;pushInput();}
+      if(near(p,112,H-58,50)){myInput.right=true;pushInput();}
+      if(near(p,80,H-114,50)){myInput.jump=true;pushInput();setTimeout(()=>{myInput.jump=false;pushInput();},150);}
+      if(near(p,W-48,H-58,50)){myInput.attack=true;pushInput();setTimeout(()=>{myInput.attack=false;pushInput();},150);}
+      if(near(p,W-104,H-58,50)){myInput.block=true;pushInput();}
+      if(near(p,W-160,H-88,50)){myInput.special=true;pushInput();setTimeout(()=>{myInput.special=false;pushInput();},150);}
     }
   },{passive:false});
   canvas.addEventListener('touchend',e=>{
     e.preventDefault();
-    // solo soltamos direccionales y bloqueo — ataques se auto-sueltan con timeout
     myInput.left=false;myInput.right=false;myInput.block=false;
     pushInput();
   },{passive:false});
