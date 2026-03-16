@@ -409,17 +409,24 @@ function drawFighter(pk){
     return;
   }
   const sc=FH/img.height,dw=img.width*sc;
+
+  // dibujar en offscreen para aplicar tint
+  const oc=document.createElement('canvas');
+  oc.width=dw;oc.height=FH;
+  const ox=oc.getContext('2d');
+  ox.drawImage(img,0,0,dw,FH);
+  if(f.state==='hurt'){
+    ox.globalCompositeOperation='source-atop';
+    ox.fillStyle='rgba(255,0,0,0.5)';
+    ox.fillRect(0,0,dw,FH);
+  }
+
   ctx.save();
   if(f.facing<0){ctx.translate(f.x+dw/2,f.y-FH);ctx.scale(-1,1);}
   else{ctx.translate(f.x-dw/2,f.y-FH);}
-  ctx.drawImage(img,0,0,dw,FH);
-  // tint rojo si está siendo golpeado
-  if(f.state==='hurt'){
-    ctx.globalCompositeOperation='source-atop';
-    ctx.fillStyle='rgba(255,0,0,0.55)';
-    ctx.fillRect(0,0,dw,FH);
-  }
+  ctx.drawImage(oc,0,0);
   ctx.restore();
+
   if(f.blocking){
     ctx.save();ctx.globalAlpha=0.3;ctx.fillStyle='#4af';
     ctx.beginPath();ctx.ellipse(f.x+(f.facing>0?dw*0.3:-dw*0.3),f.y-FH/2,40,75,0,0,Math.PI*2);
@@ -489,25 +496,109 @@ function drawSpecial(){
   const isMachi=s.name==='MACHI';
   const attackName=isMachi?'CHAMPAGNE SUPERNOVA':'ABSOLUT PLANTS';
   const col=isMachi?'#FFD700':'#00FF7F';
+  const pk=isMachi?'p1':'p2';
+  const ok=isMachi?'p2':'p1';
+
+  // FASE 1 (t 0-40): freeze + fondo invertido
+  // FASE 2 (t 40-120): placa entra desde izquierda
+  // FASE 3 (t 120-160): placa sale, se ejecuta el ataque
+  // FASE 4 (t 160-200): ataque especial en pantalla (sprites champagne/plantas)
+
+  if(s.t===60&&!s.damageDealt){
+    s.damageDealt=true;
+    const opp=gs[ok];
+    if(!opp.blocking){
+      opp.hp=Math.max(0,opp.hp-35);
+      opp.state='hurt';opp.frame=0;inv[ok]=40;
+      if(opp.hp<=0){opp.state='ko';}
+    } else opp.hp=Math.max(0,opp.hp-8);
+  }
+
+  // fondo invertido
   ctx.save();
-  ctx.fillStyle=s.t%8<4?'rgba(255,200,0,0.2)':'rgba(0,50,200,0.2)';ctx.fillRect(0,0,W,H);
-  const maxX=W*0.52,px=s.t<35?-maxX+(s.t/35)*maxX:(s.t>110?maxX-((s.t-110)/40)*maxX*2:0);
-  ctx.translate(px,0);
-  const grad=ctx.createLinearGradient(0,H*0.25,maxX,H*0.75);
-  grad.addColorStop(0,'rgba(0,0,0,0.96)');grad.addColorStop(1,col+'22');
-  ctx.fillStyle=grad;ctx.fillRect(0,H*0.25,maxX,H*0.5);
-  ctx.strokeStyle=col;ctx.lineWidth=3;ctx.strokeRect(0,H*0.25,maxX,H*0.5);
-  const csp=isMachi?SP.machi:SP.mauron;
-  const cf=(csp.celeb||[])[Math.floor(s.t/15)%Math.max(1,(csp.celeb||[]).length)];
-  if(cf){const ch=H*0.4,cw=cf.width*(ch/cf.height);ctx.save();ctx.translate(maxX*0.75,H*0.75);ctx.scale(-1,-1);ctx.drawImage(cf,-cw/2,0,cw,-ch);ctx.restore();}
-  ctx.shadowColor=col;ctx.shadowBlur=20;ctx.fillStyle=col;
-  ctx.font='bold '+Math.floor(W*0.038)+'px Arial Black';ctx.textAlign='center';
-  ctx.fillText(attackName,maxX*0.42,H*0.52);
-  ctx.fillStyle='#fff';ctx.font='bold '+Math.floor(W*0.022)+'px Arial';ctx.shadowBlur=0;
-  ctx.fillText(s.name,maxX*0.42,H*0.36);
+  if(s.t<160){
+    ctx.fillStyle=s.t%10<5?'rgba(255,220,0,0.22)':'rgba(20,20,200,0.22)';
+    ctx.fillRect(0,0,W,H);
+  }
+
+  // placa lateral — entra t=20, sale t=120
+  if(s.t>=20&&s.t<150){
+    const maxX=W*0.54;
+    let px;
+    if(s.t<50) px=-maxX+((s.t-20)/30)*maxX;        // entra
+    else if(s.t<120) px=0;                           // queda
+    else px=-((s.t-120)/30)*maxX;                    // sale
+
+    ctx.translate(px,0);
+    const grad=ctx.createLinearGradient(0,H*0.2,maxX,H*0.8);
+    grad.addColorStop(0,'rgba(0,0,0,0.97)');
+    grad.addColorStop(1,col+'33');
+    ctx.fillStyle=grad;ctx.fillRect(0,H*0.2,maxX,H*0.6);
+    ctx.strokeStyle=col;ctx.lineWidth=3;ctx.strokeRect(0,H*0.2,maxX,H*0.6);
+
+    // nombre del ataque
+    ctx.shadowColor=col;ctx.shadowBlur=18;
+    ctx.fillStyle=col;
+    ctx.font='bold '+Math.floor(W*0.036)+'px Arial Black';
+    ctx.textAlign='center';
+    ctx.fillText(attackName,maxX*0.44,H*0.52);
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#fff';
+    ctx.font='bold '+Math.floor(W*0.02)+'px Arial';
+    ctx.fillText(s.name,maxX*0.44,H*0.34);
+
+    // frame de festejo del personaje
+    const celebSp=getSP(pk);
+    const celebFrames=celebSp.celeb||[];
+    const cf=celebFrames[Math.floor(s.t/15)%Math.max(1,celebFrames.length)];
+    if(cf){
+      const ch=H*0.5,cw=cf.width*(ch/cf.height);
+      ctx.save();
+      ctx.translate(maxX*0.75,H*0.78);
+      ctx.scale(-1,-1);
+      ctx.drawImage(cf,-cw/2,0,cw,-ch);
+      ctx.restore();
+    }
+  }
+
+  // sprites del ataque especial de Machi (champagne) sobre el oponente
+  if(s.t>=130&&isMachi){
+    const atkFrames=getSP('p1').special||[];
+    const fi=Math.floor((s.t-130)/5)%Math.max(1,atkFrames.length);
+    const af=atkFrames[fi];
+    if(af){
+      const p=gs.p1;
+      const sc2=FH/af.height,dw2=af.width*sc2;
+      ctx.save();
+      if(p.facing<0){ctx.translate(p.x+dw2/2,p.y-FH);ctx.scale(-1,1);}
+      else ctx.translate(p.x-dw2/2,p.y-FH);
+      ctx.drawImage(af,0,0,dw2,FH);
+      ctx.restore();
+    }
+  }
+
+  // plantas de Mauron sobre el oponente
+  if(s.t>=130&&!isMachi){
+    const plants=SP.mauron.plants||[];
+    const fi=Math.floor((s.t-130)/8)%Math.max(1,plants.length);
+    const pf=plants[fi];
+    if(pf){
+      const opp=gs.p1;
+      const ph=FH*0.7,pw=pf.width*(ph/pf.height);
+      ctx.save();ctx.translate(opp.x,opp.y);ctx.scale(1,-1);
+      ctx.drawImage(pf,-pw/2,0,pw,-ph);ctx.restore();
+    }
+  }
+
   ctx.restore();
   s.t++;
-  if(s.t>=150){specialPhase=null;gs.phase='fight';gs.specialName=null;}
+  if(s.t>=200){
+    specialPhase=null;
+    gs.phase='fight';
+    gs.specialName=null;
+    gs[pk].state='idle';
+    if(gs[ok].state!=='ko') gs[ok].state='idle';
+  }
 }
 
 // ── PHYSICS ──────────────────────────────────────────────────────
@@ -522,16 +613,15 @@ function physicsTick(){
     if(p.y>=FLOOR){p.y=FLOOR;p.vy=0;p.grounded=true;if(p.state==='jump')p.state='idle';}
     // frame advance
     fTimer[pk]++;
-    const spd=p.state==='special'?5:p.state==='attack'?4:p.state==='walk'?6:9;
+    const spd=p.state==='special'?5:p.state==='attack'?8:p.state==='walk'?6:p.state==='celeb'?3:9;
     if(fTimer[pk]>=spd){fTimer[pk]=0;p.frame++;}
     const fr=getFrames(pk);
     if(fr.length){
-      const loop=!['ko','hurt'].includes(p.state);
+      const loop=!['ko','hurt'].includes(p.state); // celeb también loopea
       if(p.frame>=fr.length){
         if(loop)p.frame=0;
         else p.frame=fr.length-1;
-        // auto reset attack/hurt
-        if(p.state==='attack'){p.state='idle';p.frame=0;}
+        if(p.state==='attack'){p.state='idle';p.frame=0;p._attackHit=false;}
         if(p.state==='hurt'){p.state='idle';p.frame=0;}
       }
     }
@@ -574,12 +664,13 @@ function applyInput(pk,inp){
 
   // ATTACK — solo conecta en frame de impacto (frame 2 en adelante)
   if(inp.attack&&!['ko','hurt','special'].includes(p.state)&&hitCD[pk]===0){
-    if(p.state!=='attack'){p.state='attack';p.frame=0;}
+    if(p.state!=='attack'){p.state='attack';p.frame=0;p._attackHit=false;}
   }
-  // hit detection — solo en frames activos del ataque
-  if(p.state==='attack'&&p.frame>=1&&hitCD[pk]===0){
+  // hit detection — frames activos, con cooldown para que dure más
+  if(p.state==='attack'&&p.frame>=1&&!p._attackHit&&hitCD[pk]===0){
     const dist=Math.abs(p.x-opp.x);
     if(dist<=130){
+      p._attackHit=true;
       if(!opp.blocking&&inv[ok]===0){
         opp.hp=Math.max(0,opp.hp-10);
         opp.state='hurt';opp.frame=0;inv[ok]=22;
