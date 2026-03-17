@@ -130,7 +130,7 @@ function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textCon
 
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
 const W=900,H=500,FLOOR=H-38,GR=0.75,SPMAX=100,TICK=33;
-const FH=248,FW=80;
+const FH=248*1.4,FW=80*1.4; // 40% más grande
 
 // ── AUTH ──────────────────────────────────────────────────────────
 let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null;
@@ -186,8 +186,10 @@ function removeChroma(img){
   const d=ox.getImageData(0,0,oc.width,oc.height);
   for(let i=0;i<d.data.length;i+=4){
     const r=d.data[i],g=d.data[i+1],b=d.data[i+2];
-    if(g>120&&g-r>60&&g-b>60)d.data[i+3]=0;
-    else if(b>120&&b-r>60&&b-g>40)d.data[i+3]=0;
+    // verde puro: muy dominante sobre r y b, evitar verdes naturales (piel, ropa)
+    if(g>150&&g-r>80&&g-b>80)d.data[i+3]=0;
+    // azul puro
+    else if(b>150&&b-r>80&&b-g>50)d.data[i+3]=0;
   }
   ox.putImageData(d,0,0);return oc;
 }
@@ -433,33 +435,45 @@ function drawSpecial(){
   // 2) Dibujar SOLO el sprite del ataque del lanzador (reemplaza su sprite normal)
   const p=gs[pk];
   if(launcherIsMachi){
-    // MACHI: champagne
+    // MACHI: champagne — anclar cuerpo (izq del sprite) al centro de Machi
     const atkFrames=SP.machi?.special||[];
     const fi=Math.min(Math.floor(s.t/3),atkFrames.length-1);
     const af=atkFrames[fi];
     if(af){
-      const dw=af.width*(FH/af.height),bodyW=dw*0.30;
+      const dw=af.width*(FH/af.height);
+      // el cuerpo de Machi ocupa el 30% izquierdo del sprite
+      // al mirar a la derecha: anclar borde izq al centro de Machi
+      // al mirar a la izquierda: flip, misma lógica
       ctx.save();
-      if(p.facing>0){ctx.translate(p.x-bodyW,p.y-FH);}
-      else{ctx.translate(p.x+bodyW,p.y-FH);ctx.scale(-1,1);ctx.translate(-dw,0);}
-      ctx.drawImage(af,0,0,dw,FH);ctx.restore();
+      if(p.facing>0){
+        // mira derecha: dibujar desde p.x - 30%*dw
+        ctx.translate(p.x - dw*0.30, p.y - FH);
+        ctx.drawImage(af, 0, 0, dw, FH);
+      } else {
+        // mira izquierda: flip horizontal sobre el centro del cuerpo
+        ctx.translate(p.x + dw*0.30, p.y - FH);
+        ctx.scale(-1, 1);
+        ctx.drawImage(af, 0, 0, dw, FH);
+      }
+      ctx.restore();
     }
-    // último frame: quedarse 12 ticks extra
+    // último frame: hold + hit
     const isLast=fi>=atkFrames.length-1;
     if(!s.holdStarted&&isLast){s.holdStarted=true;s.holdT=0;}
     if(s.holdStarted)s.holdT++;
-    // hit cuando champagne llega al oponente
-    if(fi>=4&&!s.damageDealt){
+    if(isLast&&s.holdT>=6&&!s.damageDealt){
       s.damageDealt=true;
-      const champEnd=p.facing>0?p.x+250:p.x-250;
-      if(Math.abs(champEnd-frozenOpp.x)<220){
+      // hitbox: el chorro llega hasta el extremo derecho/izquierdo del sprite
+      const champEnd=p.facing>0 ? p.x-dw*0.30+dw : p.x+dw*0.30-dw;
+      if(frozenOpp&&Math.abs(champEnd-frozenOpp.x)<FW*1.5){
         applySpecialDamage(ok,pk,s);
       }
     }
   } else {
-    // MAURON: semillas t=0-35 → plantas t=35+
+    // MAURON: semillas t=0-35 (sprite special 1-4), luego plantas crecen
+    // SIEMPRE dibujar el último sprite de semillas mientras duran las plantas
+    const spF=SP.mauron?.special||[];
     if(s.t<35){
-      const spF=SP.mauron?.special||[];
       const fi=Math.min(Math.floor(s.t/9),spF.length-1);
       const sf=spF[fi];
       if(sf){
@@ -470,7 +484,16 @@ function drawSpecial(){
         ctx.drawImage(sf,0,0,dw,FH);ctx.restore();
       }
     } else {
-      // plantas nacen en plantX
+      // Mauron se queda en el último sprite de special (frame 3 = index 3)
+      const lastSF=spF[spF.length-1];
+      if(lastSF){
+        const dw=lastSF.width*(FH/lastSF.height);
+        ctx.save();
+        if(p.facing<0){ctx.translate(p.x+dw/2,p.y-FH);ctx.scale(-1,1);}
+        else ctx.translate(p.x-dw/2,p.y-FH);
+        ctx.drawImage(lastSF,0,0,dw,FH);ctx.restore();
+      }
+      // plantas crecen ENCIMA, independientemente
       const plants=SP.mauron?.plants||[];
       const fi=Math.min(Math.floor((s.t-35)/4),plants.length-1);
       const pf=plants[fi];
@@ -480,20 +503,16 @@ function drawSpecial(){
         ctx.save();ctx.translate(plantX,FLOOR);
         ctx.drawImage(pf,-pw/2,-ph,pw,ph);ctx.restore();
       }
-      // último frame: quedarse 12 ticks
       const isLast=fi>=plants.length-1;
       if(!s.holdStarted&&isLast){s.holdStarted=true;s.holdT=0;}
       if(s.holdStarted)s.holdT++;
-      // hit cuando plantas son grandes (fi>=2) en la zona donde nacen
-      if(fi>=2&&!s.damageDealt){
+      if(isLast&&s.holdT>=6&&!s.damageDealt){
         s.damageDealt=true;
-        if(Math.abs(plantX-frozenOpp.x)<130){
+        if(frozenOpp&&Math.abs(plantX-frozenOpp.x)<FW*1.5){
           applySpecialDamage(ok,pk,s);
         }
       }
     }
-    // también mostrar al Mauron en su sprite de lanzar (reemplaza al frozen)
-    // (ya lo dibujamos arriba — si t<35 aparece mauron con semillas)
   }
 
   s.t++;
@@ -538,11 +557,12 @@ function startKOSequence(loserKey,winnerKey){
   const loser=gs[loserKey];
   const dir=loser.x<gs[winnerKey].x?-1:1;
   koSeq={loser:loserKey,winner:winnerKey,t:0,phase:'flyback',
-    vx:dir*8,vy:-10,celebFrame:0,celebTimer:0,
+    vx:dir*8,vy:-10,celebFrame:0,celebTimer:0,idleT:0,
     winnerName:vsMode==='cpu'?(winnerKey==='p1'?currentUser?.displayName||'VOS':'CPU'):(winnerKey==='p1'?'MACHI':'MAURON')
   };
   gs[loserKey].state='ko';
-  gs[winnerKey].state='celeb';
+  gs[winnerKey].state='idle'; // empieza en idle
+  gs[winnerKey].frame=0;
   gs.phase='ko';
   clearInterval(timerInt);
   wins[winnerKey]++;
@@ -560,6 +580,11 @@ function updateKOSeq(){
     }
   } else if(s.phase==='floor'){
     s.t++;
+    // winner: idle por 40 ticks, luego celeb
+    s.idleT++;
+    if(s.idleT>40&&gs[s.winner].state==='idle'){
+      gs[s.winner].state='celeb';gs[s.winner].frame=0;
+    }
     if(s.t>60){
       if(s.matchWin){s.phase='celeb';s.t=0;}
       else{
