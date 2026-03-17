@@ -162,14 +162,19 @@ function playNoise(dur,vol=0.2,freq=800){
 
 const SFX={
   punch:()=>{
-    playNoise(0.06,0.4,400);
-    playTone(180,'square',0.08,0.15);
+    resumeAC();
+    // impacto sordo + crack
+    playNoise(0.08,0.5,300);
+    playTone(120,'square',0.06,0.3);
+    playTone(80,'sawtooth',0.1,0.2,0.02);
   },
   block:()=>{
+    resumeAC();
     playTone(300,'square',0.05,0.2);
     playTone(200,'square',0.08,0.15,0.03);
   },
   jump:()=>{
+    resumeAC();
     const o=AC.createOscillator(),g=AC.createGain();
     o.connect(g);g.connect(AC.destination);
     o.type='sine';
@@ -180,28 +185,39 @@ const SFX={
     o.start();o.stop(AC.currentTime+0.2);
   },
   hurt:()=>{
-    playNoise(0.1,0.3,200);
-    playTone(120,'sawtooth',0.1,0.2);
+    resumeAC();
+    playNoise(0.12,0.35,180);
+    playTone(100,'sawtooth',0.12,0.25);
   },
   special:()=>{
-    // subida épica
+    resumeAC();
     [100,150,200,300,450,600].forEach((f,i)=>{
       playTone(f,'sawtooth',0.12,0.25,i*0.06);
     });
     playNoise(0.3,0.3,1000);
   },
   ko:()=>{
+    resumeAC();
     playNoise(0.15,0.5,150);
     [200,150,100,70].forEach((f,i)=>{
       playTone(f,'sawtooth',0.15,0.3,i*0.1);
     });
   },
   win:()=>{
+    resumeAC();
     const melody=[523,659,784,1047];
     melody.forEach((f,i)=>{
       playTone(f,'sine',0.2,0.35,i*0.15);
       playTone(f/2,'sine',0.2,0.15,i*0.15);
     });
+  },
+  plant:()=>{
+    resumeAC();
+    // sonido de plantas creciendo — ascendente orgánico
+    [80,120,160,200].forEach((f,i)=>{
+      playTone(f,'sine',0.2,0.15,i*0.08);
+    });
+    playNoise(0.3,0.2,400);
   },
 };
 
@@ -395,18 +411,17 @@ function getFrames(pk,st){
 function drawSpriteAt(img,x,y,h,facing,tint,wiggle){
   if(!img)return;
   const dw=img.width*(h/img.height);
-  // offset puño Mauron
-  let offX=0;
+  const now=Date.now()*0.05;
+  const wx=wiggle?Math.sin(now)*5:0;
+  const wy=wiggle?Math.abs(Math.sin(now*0.7))*-8:0; // flota levemente hacia arriba
   ctx.save();
-  const wx=wiggle?Math.sin(Date.now()*0.05)*4:0;
-  if(facing<0){ctx.translate(x+dw/2+offX+wx,y-h);ctx.scale(-1,1);}
-  else{ctx.translate(x-dw/2+offX+wx,y-h);}
+  if(facing<0){ctx.translate(x+dw/2+wx,y-h+wy);ctx.scale(-1,1);}
+  else{ctx.translate(x-dw/2+wx,y-h+wy);}
   if(tint){
-    // dibujar en offscreen con tint rojo
     const oc=document.createElement('canvas');oc.width=dw;oc.height=h;
     const ox=oc.getContext('2d');ox.drawImage(img,0,0,dw,h);
     ox.globalCompositeOperation='source-atop';ox.fillStyle=tint;ox.fillRect(0,0,dw,h);
-    ctx.drawImage(oc,0,0);
+    ctx.drawImage(oc,0,0,dw,h);
   } else {
     ctx.drawImage(img,0,0,dw,h);
   }
@@ -651,8 +666,18 @@ function drawSpecial(){
 function applySpecialDamage(targetKey,launcherKey,s){
   const target=gs[targetKey];
   if(target.state==='ko')return;
-  s.oppHit=true;s.oppWiggle=25;
-  SFX.hurt();
+  s.oppHit=true;s.oppWiggle=60; // 60 ticks de wiggle
+  const launcherIsMachi=getSP(launcherKey)===SP.machi;
+  if(launcherIsMachi){
+    SFX.hurt();
+  } else {
+    SFX.plant(); // sonido específico de plantas
+    // lanzar levemente hacia arriba
+    if(target.grounded){
+      target.vy=-6;
+      target.grounded=false;
+    }
+  }
   if(!target.blocking){
     const dmg=35;
     target.hp=Math.max(0,target.hp-dmg);
@@ -662,6 +687,7 @@ function applySpecialDamage(targetKey,launcherKey,s){
     } else if(target.hp<=0){
       target.hp=target.hp2;target.hp2=0;
     }
+    target.state='hurt';target.frame=0;inv[targetKey]=20;
   } else {
     target.hp=Math.max(0,target.hp-8);
     SFX.block();
