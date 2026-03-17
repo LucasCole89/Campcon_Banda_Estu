@@ -115,7 +115,7 @@ canvas{display:block;touch-action:none;}
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,signInWithPopup,GoogleAuthProvider,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getDatabase,ref,set,get,onValue,update,remove,off}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import{getDatabase,ref,set,get,onValue,update,remove,off,onDisconnect}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
 const firebaseConfig={apiKey:"AIzaSyBLii7JWZgNSoMZ7xLWeFRYvQ2Wx4snX-k",authDomain:"campcon-banda-estu.firebaseapp.com",databaseURL:"https://campcon-banda-estu-default-rtdb.firebaseio.com",projectId:"campcon-banda-estu",storageBucket:"campcon-banda-estu.firebasestorage.app",messagingSenderId:"790816311475",appId:"1:790816311475:web:7835a520eaa7545d2cc8c6"};
 const fbApp=initializeApp(firebaseConfig);
@@ -296,6 +296,8 @@ $('btnCreate').onclick=async()=>{
   try{
     roomCode=genCode();roomRef=ref(db,`rooms/${roomCode}`);
     await set(roomRef,{host:currentUser.uid,hostName:currentUser.displayName,guest:null,guestName:null,status:'waiting',state:null});
+    // auto-borrar la sala si el host se desconecta
+    onDisconnect(roomRef).remove();
     myRole='host';vsMode='online';
     $('displayCode').textContent=roomCode;$('waitMsg').textContent='Esperando al rival...';show('waitingScreen');
     onValue(roomRef,snap=>{const d=snap.val();if(!d)return;if(d.status==='ready'&&d.guest){off(roomRef);startGame();}});
