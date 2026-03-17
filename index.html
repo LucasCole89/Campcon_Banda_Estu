@@ -1130,10 +1130,20 @@ function launchGame(){
   }
 }
 
+// DEBUG visible en pantalla
+function debugLog(msg){
+  let d=$('debugLog');
+  if(!d){d=document.createElement('div');d.id='debugLog';
+    d.style.cssText='position:fixed;top:0;left:0;background:rgba(0,0,0,0.8);color:lime;font-size:11px;padding:4px 8px;z-index:9999;max-width:100vw;pointer-events:none;';
+    document.body.appendChild(d);}
+  d.textContent=msg;
+}
+
 async function startGame(){
   show('waitingScreen');$('waitMsg').textContent='Cargando sprites...';
   await loadSprites();
   myKey=myRole==='host'?'p1':'p2';oppKey=myRole==='host'?'p2':'p1';
+  debugLog('role:'+myRole+' vsMode:'+vsMode);
   showSelectScreen();
 }
 
