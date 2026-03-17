@@ -163,10 +163,25 @@ function playNoise(dur,vol=0.2,freq=800){
 const SFX={
   punch:()=>{
     resumeAC();
-    // impacto sordo + crack
-    playNoise(0.08,0.5,300);
-    playTone(120,'square',0.06,0.3);
-    playTone(80,'sawtooth',0.1,0.2,0.02);
+    // capa 1: impacto sordo
+    const b=AC.createBuffer(1,AC.sampleRate*0.1,AC.sampleRate);
+    const bd=b.getChannelData(0);
+    for(let i=0;i<bd.length;i++)bd[i]=(Math.random()*2-1)*Math.exp(-i/(AC.sampleRate*0.04));
+    const src=AC.createBufferSource();src.buffer=b;
+    const bpf=AC.createBiquadFilter();bpf.type='bandpass';bpf.frequency.value=250;bpf.Q.value=0.8;
+    const g=AC.createGain();g.gain.setValueAtTime(0.8,AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.1);
+    src.connect(bpf);bpf.connect(g);g.connect(AC.destination);
+    src.start();src.stop(AC.currentTime+0.12);
+    // capa 2: crack agudo
+    const b2=AC.createBuffer(1,AC.sampleRate*0.05,AC.sampleRate);
+    const bd2=b2.getChannelData(0);
+    for(let i=0;i<bd2.length;i++)bd2[i]=(Math.random()*2-1)*Math.exp(-i/(AC.sampleRate*0.01));
+    const src2=AC.createBufferSource();src2.buffer=b2;
+    const g2=AC.createGain();g2.gain.setValueAtTime(0.5,AC.currentTime);
+    g2.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.05);
+    src2.connect(g2);g2.connect(AC.destination);
+    src2.start();src2.stop(AC.currentTime+0.06);
   },
   block:()=>{
     resumeAC();
@@ -252,7 +267,7 @@ function startMusic(){
 function stopMusic(){
   if(musicNode){clearTimeout(musicNode);musicNode=null;}
 }
-const W=900,H=500,FLOOR=H-38,GR=0.75,SPMAX=100,TICK=33;
+const W=900,H=500,FLOOR=H-100,GR=0.75,SPMAX=100,TICK=33;
 const FH=248,FW=80;
 
 // ── AUTH ──────────────────────────────────────────────────────────
@@ -373,6 +388,10 @@ function resize(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 resize();window.addEventListener('resize',resize);
+// desbloquear AudioContext en el primer gesto del usuario
+['touchstart','mousedown','keydown'].forEach(ev=>
+  document.addEventListener(ev,()=>resumeAC(),{once:false})
+);
 
 // ── ROUNDS ────────────────────────────────────────────────────────
 let wins={p1:0,p2:0},currentRound=1,roundBanner=null;
@@ -451,8 +470,10 @@ function drawFighter(pk){
 
 // ── BG ────────────────────────────────────────────────────────────
 function drawBg(){
-  if(SP.bg){const bW=W*1.4;ctx.drawImage(SP.bg,-bgOffset*(bW-W),0,bW,H);}
-  else{ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,W,H);}
+  // franja negra abajo
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  if(SP.bg){const bW=W*1.4,bH=FLOOR;ctx.drawImage(SP.bg,-bgOffset*(bW-W),0,bW,bH);}
+  else{const g=ctx.createLinearGradient(0,0,0,FLOOR);g.addColorStop(0,'#1a1a2e');g.addColorStop(1,'#c8a060');ctx.fillStyle=g;ctx.fillRect(0,0,W,FLOOR);}
   ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=3;
   ctx.beginPath();ctx.moveTo(0,FLOOR);ctx.lineTo(W,FLOOR);ctx.stroke();
 }
@@ -508,7 +529,7 @@ function drawHUD(){
   }
 }
 
-const BTNS={L:{x:60,y:H-70,r:38},R:{x:148,y:H-70,r:38},UP:{x:104,y:H-150,r:38},P:{x:W-60,y:H-70,r:38},B:{x:W-152,y:H-70,r:38},S:{x:W-210,y:H-140,r:38}};
+const BTNS={L:{x:60,y:H-130,r:38},R:{x:148,y:H-130,r:38},UP:{x:104,y:H-210,r:38},P:{x:W-60,y:H-130,r:38},B:{x:W-152,y:H-130,r:38},S:{x:W-210,y:H-210,r:38}};
 function drawControls(){
   ctx.save();ctx.globalAlpha=0.6;
   const D=(b,lbl,c)=>{
@@ -1036,6 +1057,7 @@ function setupTouch(){
   const near=(p,b)=>Math.hypot(p.x-b.x,p.y-b.y)<b.r*1.4;
   canvas.addEventListener('touchstart',e=>{
     e.preventDefault();
+    resumeAC(); // desbloquear audio en el primer toque
     for(const t of e.changedTouches){
       const p=getPos(t);
       if(near(p,BTNS.L)){myInput.left=true;pushInput();}
