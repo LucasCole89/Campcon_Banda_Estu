@@ -493,12 +493,20 @@ function drawHUD(){
   }
 }
 
-const BTNS={L:{x:60,y:H-70,r:32},R:{x:140,y:H-70,r:32},UP:{x:100,y:H-145,r:32},P:{x:W-60,y:H-70,r:32},B:{x:W-140,y:H-70,r:32},S:{x:W-200,y:H-135,r:32}};
+const BTNS={L:{x:60,y:H-70,r:38},R:{x:148,y:H-70,r:38},UP:{x:104,y:H-150,r:38},P:{x:W-60,y:H-70,r:38},B:{x:W-152,y:H-70,r:38},S:{x:W-210,y:H-140,r:38}};
 function drawControls(){
   ctx.save();ctx.globalAlpha=0.6;
-  const D=(b,lbl,c)=>{ctx.fillStyle=c;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${b.r*0.6}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(lbl,b.x,b.y);ctx.textBaseline='alphabetic';};
+  const D=(b,lbl,c)=>{
+    ctx.fillStyle=c;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#fff';
+    const fs=lbl.length>2?b.r*0.32:b.r*0.6;
+    ctx.font=`bold ${fs}px Arial`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(lbl,b.x,b.y);ctx.textBaseline='alphabetic';
+  };
   D(BTNS.L,'◀','#223');D(BTNS.R,'▶','#223');D(BTNS.UP,'▲','#232');
-  D(BTNS.P,'P','#332');D(BTNS.B,'B','#322');D(BTNS.S,'S','#223');
+  D(BTNS.P,'PUNCH','#332');D(BTNS.B,'BLOCK','#322');D(BTNS.S,'SPECIAL','#223');
   ctx.restore();
 }
 
@@ -547,7 +555,7 @@ function drawSpecial(){
     const fi=Math.min(Math.floor(s.t/3),atkFrames.length-1);
     const af=atkFrames[fi];
     if(af){
-      const SPECIAL_SCALE=1.4; // solo el especial de Machi es más grande
+      const SPECIAL_SCALE=1.4*0.8; // era 1.4, ahora 20% menos = 1.12
       const dw=af.width*(FH/af.height)*SPECIAL_SCALE;
       const dh=FH*SPECIAL_SCALE;
       // el cuerpo de Machi ocupa el 30% izquierdo del sprite
@@ -721,8 +729,9 @@ function updateKOSeq(){
 function drawKOOverlay(){
   if(!koSeq||koSeq.phase==='done')return;
   const s=koSeq,loser=gs[s.loser];
-  // SOLO dibujar el loser en defeated — UNA sola vez
-  const frames=getFrames(s.loser,'defeated');
+  // fase flyback: sprite ko (volando), fase floor+: sprite defeated (en el piso)
+  const state=s.phase==='flyback'?'ko':'defeated';
+  const frames=getFrames(s.loser,state);
   const img=frames[0];
   if(img)drawSpriteAt(img,loser.x,loser.y,FH,loser.facing,null,false);
   if(s.phase==='celeb'){
