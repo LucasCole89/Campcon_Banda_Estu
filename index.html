@@ -130,7 +130,7 @@ function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textCon
 
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
 const W=900,H=500,FLOOR=H-38,GR=0.75,SPMAX=100,TICK=33;
-const FH=248*1.4,FW=80*1.4; // 40% más grande
+const FH=248,FW=80;
 
 // ── AUTH ──────────────────────────────────────────────────────────
 let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null;
@@ -440,31 +440,30 @@ function drawSpecial(){
     const fi=Math.min(Math.floor(s.t/3),atkFrames.length-1);
     const af=atkFrames[fi];
     if(af){
-      const dw=af.width*(FH/af.height);
+      const SPECIAL_SCALE=1.4; // solo el especial de Machi es más grande
+      const dw=af.width*(FH/af.height)*SPECIAL_SCALE;
+      const dh=FH*SPECIAL_SCALE;
       // el cuerpo de Machi ocupa el 30% izquierdo del sprite
       // al mirar a la derecha: anclar borde izq al centro de Machi
       // al mirar a la izquierda: flip, misma lógica
       ctx.save();
       if(p.facing>0){
-        // mira derecha: dibujar desde p.x - 30%*dw
-        ctx.translate(p.x - dw*0.30, p.y - FH);
-        ctx.drawImage(af, 0, 0, dw, FH);
+        ctx.translate(p.x - dw*0.30, p.y - dh);
+        ctx.drawImage(af, 0, 0, dw, dh);
       } else {
-        // mira izquierda: flip horizontal sobre el centro del cuerpo
-        ctx.translate(p.x + dw*0.30, p.y - FH);
+        ctx.translate(p.x + dw*0.30, p.y - dh);
         ctx.scale(-1, 1);
-        ctx.drawImage(af, 0, 0, dw, FH);
+        ctx.drawImage(af, 0, 0, dw, dh);
       }
       ctx.restore();
     }
-    // último frame: hold + hit
     const isLast=fi>=atkFrames.length-1;
     if(!s.holdStarted&&isLast){s.holdStarted=true;s.holdT=0;}
     if(s.holdStarted)s.holdT++;
     if(isLast&&s.holdT>=6&&!s.damageDealt){
       s.damageDealt=true;
-      // hitbox: el chorro llega hasta el extremo derecho/izquierdo del sprite
-      const champEnd=p.facing>0 ? p.x-dw*0.30+dw : p.x+dw*0.30-dw;
+      const dw2=atkFrames[fi].width*(FH/atkFrames[fi].height)*1.4;
+      const champEnd=p.facing>0 ? p.x-dw2*0.30+dw2 : p.x+dw2*0.30-dw2;
       if(frozenOpp&&Math.abs(champEnd-frozenOpp.x)<FW*1.5){
         applySpecialDamage(ok,pk,s);
       }
