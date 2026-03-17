@@ -906,6 +906,7 @@ function applyInput(pk,inp){
   if(inp.attack&&p.state!=='attack'&&!['hurt','ko','defeated'].includes(p.state)&&hitCD[pk]===0){
     p.state='attack';p.frame=0;p._attackHit=false;
     p._airAtk=!p.grounded?(Math.random()<0.5?'jumpKick':'jumpPunch'):null;
+    SFX.punch(); // sonido al apretar, siempre
   }
   const atkFrames=p._airAtk?getFrames(pk,p._airAtk):getFrames(pk,'attack');
   const hitFrom=atkFrames.length<=1?0:1;
@@ -960,6 +961,7 @@ function updateCPU(){
 
 // ── HOST TICK ─────────────────────────────────────────────────────
 function hostTick(){
+  if(gs.phase==='countdown')return; // esperar countdown
   if(koSeq&&koSeq.phase!=='done'){updateKOSeq();return;}
   if(gs.phase==='fight'){
     if(vsMode==='cpu')updateCPU();
@@ -1005,7 +1007,54 @@ function pushState(){
   });
 }
 
-// ── TIMER ─────────────────────────────────────────────────────────
+// ── COUNTDOWN ─────────────────────────────────────────────────────
+let countdown=null; // {n, t} — n=3,2,1,0='FIGHT!'
+
+function startCountdown(){
+  countdown={n:3,t:0};
+  gs.phase='countdown'; // bloquear input durante countdown
+}
+
+function drawCountdown(){
+  if(!countdown)return;
+  countdown.t++;
+  if(countdown.t%50===0){
+    countdown.n--;
+    if(countdown.n<0){
+      countdown=null;
+      gs.phase='fight';
+      // arrancar timers solo desde host
+      if(myRole==='host'){
+        startTimer();
+        if(window._hostInterval)clearInterval(window._hostInterval);
+        window._hostInterval=setInterval(hostTick,TICK);
+      }
+      return;
+    }
+  }
+  const label=countdown.n===0?'¡FIGHT!':String(countdown.n);
+  const alpha=Math.min(1,(countdown.t%50)/10);
+  const scale=1+(1-alpha)*0.5;
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  ctx.translate(W/2,H/2);
+  ctx.scale(scale,scale);
+  ctx.fillStyle='rgba(0,0,0,0.5)';
+  ctx.fillRect(-120,-60,240,110);
+  ctx.fillStyle=countdown.n===0?'#00FF7F':'#FFD700';
+  ctx.shadowColor=countdown.n===0?'#00FF7F':'#FF6600';
+  ctx.shadowBlur=30;
+  ctx.font='bold '+Math.floor(W*0.12)+'px Arial Black';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(label,0,0);
+  ctx.shadowBlur=0;
+  ctx.restore();
+  // sonido en cada número
+  if(countdown.t%50===1){
+    if(countdown.n>0)playTone(countdown.n===1?880:660,'sine',0.15,0.4);
+    else playTone(1047,'sine',0.3,0.5); // FIGHT!
+  }
+}
 function startTimer(){
   clearInterval(timerInt);
   timerInt=setInterval(()=>{
