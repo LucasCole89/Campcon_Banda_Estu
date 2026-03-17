@@ -265,7 +265,7 @@ $('btnCreate').onclick=async()=>{
   if(!currentUser){err('Necesitás estar logueado');return;}
   try{
     roomCode=genCode();roomRef=ref(db,`rooms/${roomCode}`);
-    await set(roomRef,{host:currentUser.uid,hostName:currentUser.displayName,guest:null,guestName:null,status:'waiting',state:null,createdAt:Date.now(),hostChar:null,guestReady:false});
+    await set(roomRef,{host:currentUser.uid,hostName:currentUser.displayName,guest:null,guestName:null,status:'waiting',state:null,createdAt:Date.now(),hostChar:null,guestReady:false,hostReady:false});
     onDisconnect(roomRef).remove();
     myRole='host';vsMode='online';
     $('displayCode').textContent=roomCode;$('waitMsg').textContent='Esperando al rival...';show('waitingScreen');
@@ -542,11 +542,21 @@ function drawSpecial(){
     const af=atkFrames[fi];
     if(af){
       const dh=FH,dw=af.width*(dh/af.height)*1.12;
-      const bodyW=dw*0.25;
+      const bodyW=dw*0.25; // cuerpo ocupa 25% izq del sprite
       ctx.save();
-      if(p.facing>0){ctx.translate(p.x-bodyW,p.y-dh);}
-      else{ctx.translate(p.x+bodyW,p.y-dh);ctx.scale(-1,1);ctx.translate(-dw,0);}
-      ctx.drawImage(af,0,0,dw,dh);ctx.restore();
+      if(p.facing>0){
+        // mira derecha: anclar izq del sprite al (p.x - bodyW)
+        ctx.translate(p.x-bodyW, p.y-dh);
+        ctx.drawImage(af,0,0,dw,dh);
+      } else {
+        // mira izquierda: espejamos horizontalmente
+        // el cuerpo queda a la derecha del sprite flipeado
+        // anclar el borde derecho en (p.x + bodyW)
+        ctx.translate(p.x+bodyW, p.y-dh);
+        ctx.scale(-1,1); // flip
+        ctx.drawImage(af,0,0,dw,dh); // dibuja desde 0, el flip lo invierte
+      }
+      ctx.restore();
     }
     const isLast=fi>=atkFrames.length-1;
     if(!s.holdStarted&&isLast){s.holdStarted=true;s.holdT=0;}
@@ -604,13 +614,26 @@ function applySpecialDamage(targetKey,launcherKey,s){
   const target=gs[targetKey];if(target.state==='ko')return;
   s.oppHit=true;s.oppWiggle=60;
   const launcherIsMachi=getSP(launcherKey)===SP.machi;
-  if(launcherIsMachi)SFX.hurt();else{SFX.plant();if(target.grounded){target.vy=-6;target.grounded=false;}}
+  if(launcherIsMachi){
+    SFX.hurt();SFX.special();
+    // poner estado hurt con tint rojo
+    target.state='hurt';target.frame=0;
+    target.wiggle=60;
+    inv[targetKey]=25;
+  } else {
+    SFX.plant();
+    target.state='hurt';target.frame=0;
+    target.wiggle=60;
+    inv[targetKey]=25;
+    if(target.grounded){target.vy=-6;target.grounded=false;}
+  }
   if(!target.blocking){
     target.hp=Math.max(0,target.hp-35);
-    if(target.hp<=0&&target.hp2<=0){SFX.ko();setTimeout(()=>startKOSequence(targetKey,launcherKey),300);}
+    if(target.hp<=0&&target.hp2<=0){SFX.ko();setTimeout(()=>startKOSequence(targetKey,launcherKey),600);}
     else if(target.hp<=0){target.hp=target.hp2;target.hp2=0;}
-    target.state='hurt';target.frame=0;inv[targetKey]=20;
-  } else {target.hp=Math.max(0,target.hp-8);SFX.block();}
+  } else {
+    target.hp=Math.max(0,target.hp-8);SFX.block();
+  }
 }
 
 // ── KO ────────────────────────────────────────────────────────────
@@ -619,7 +642,13 @@ function startKOSequence(loserKey,winnerKey){
   const loser=gs[loserKey];
   const dir=loser.x<gs[winnerKey].x?-1:1;
   SFX.ko();
-  const wname=vsMode==='cpu'?(winnerKey==='p1'?currentUser?.displayName||'VOS':'CPU'):(SP._p1===SP.machi?(winnerKey==='p1'?'MACHI':'MAURON'):(winnerKey==='p1'?'MAURON':'MACHI'));
+  const p1char=SP._p1===SP.machi?'MACHI':'MAURON';
+  const p2char=SP._p2===SP.machi?'MACHI':'MAURON';
+  const p1user=vsMode==='cpu'?(currentUser?.displayName||'VOS'):currentUser?.displayName||'P1';
+  const p2user=vsMode==='cpu'?'CPU':'RIVAL';
+  const wchar=winnerKey==='p1'?p1char:p2char;
+  const wuser=winnerKey==='p1'?p1user:p2user;
+  const wname=`${wchar}\n(${wuser})`;
   koSeq={loser:loserKey,winner:winnerKey,t:0,phase:'flyback',vx:dir*8,vy:-10,celebFrame:0,celebTimer:0,idleT:0,winnerName:wname};
   gs[loserKey].state='ko';gs[winnerKey].state='idle';gs[winnerKey].frame=0;
   gs.phase='ko';clearInterval(timerInt);
@@ -657,12 +686,19 @@ function drawKOOverlay(){
   if(img)drawSpriteAt(img,loser.x,loser.y,FH,loser.facing,null,false);
   if(s.phase==='celeb'){
     const alpha=Math.min(1,s.t/30);
+    const lines=s.winnerName.split('\n');
     ctx.save();ctx.globalAlpha=alpha;
-    ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,H*0.35,W,H*0.22);
-    ctx.fillStyle='#FFD700';ctx.font='bold '+Math.floor(W*0.065)+'px Arial Black';
+    ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,H*0.32,W,H*0.3);
     ctx.textAlign='center';ctx.shadowColor='#FF6600';ctx.shadowBlur=30;
-    ctx.fillText(s.winnerName.toUpperCase()+' WINS!',W/2,H*0.52);
-    ctx.shadowBlur=0;ctx.restore();
+    ctx.fillStyle='#FFD700';
+    ctx.font='bold '+Math.floor(W*0.065)+'px Arial Black';
+    ctx.fillText(lines[0]+' WINS!',W/2,H*0.5);
+    if(lines[1]){
+      ctx.shadowBlur=0;ctx.fillStyle='rgba(255,255,255,0.7)';
+      ctx.font='bold '+Math.floor(W*0.025)+'px Arial';
+      ctx.fillText(lines[1],W/2,H*0.58);
+    }
+    ctx.restore();
   }
 }
 
@@ -895,36 +931,54 @@ window.selectChar=async function(idx){
   }
 };
 
-// ── BOTÓN A PELEAR — único punto de entrada ───────────────────────
 $('btnFight').onclick=async function(){
   if(!myCharChoice)return;
   if(selAnimId)cancelAnimationFrame(selAnimId);
 
-  // asignar SP._p1 y SP._p2 — IGUAL en ambos dispositivos:
-  // SP._p1 = sprite del host, SP._p2 = sprite del guest
+  // asignar personajes
   if(vsMode==='cpu'){
     SP._p1=SP[myCharChoice];
     SP._p2=SP[myCharChoice==='machi'?'mauron':'machi'];
   } else if(myRole==='host'){
-    SP._p1=SP[myCharChoice];                             // host = p1
-    SP._p2=SP[myCharChoice==='machi'?'mauron':'machi'];  // guest = p2
+    SP._p1=SP[myCharChoice];
+    SP._p2=SP[myCharChoice==='machi'?'mauron':'machi'];
+    // marcar host listo y esperar que el guest también esté listo
+    await update(roomRef,{hostReady:true});
+    $('btnFight').disabled=true;
+    $('selMsg').textContent='Esperando que el rival confirme...';
+    const hrRef=ref(db,`rooms/${roomCode}/guestReady`);
+    onValue(hrRef,snap=>{
+      if(snap.val()!==true)return;
+      off(hrRef);
+      launchFight();
+    });
+    return;
   } else {
-    // guest: myCharChoice ya es el opuesto del host
-    SP._p1=SP[myCharChoice==='machi'?'mauron':'machi'];  // host = p1
-    SP._p2=SP[myCharChoice];                             // guest = p2 = yo
+    // guest
+    SP._p1=SP[myCharChoice==='machi'?'mauron':'machi'];
+    SP._p2=SP[myCharChoice];
     await update(roomRef,{guestReady:true});
+    $('btnFight').disabled=true;
+    $('selMsg').textContent='Esperando que el rival confirme...';
+    // esperar hostReady
+    const hrRef=ref(db,`rooms/${roomCode}/hostReady`);
+    onValue(hrRef,snap=>{
+      if(snap.val()!==true)return;
+      off(hrRef);
+      launchFight();
+    });
+    return;
   }
+  launchFight();
+};
 
+function launchFight(){
   dbg('p1:'+(SP._p1===SP.machi?'MACHI':'MAURON')+' p2:'+(SP._p2===SP.machi?'MACHI':'MAURON')+' role:'+myRole);
-
-  initGS();
-  setupSync();
-  setupTouch();
-  showCanvas();
-  startMusic();
+  initGS();setupSync();setupTouch();
+  showCanvas();startMusic();
   requestAnimationFrame(renderLoop);
   startCountdown();
-};
+}
 
 // ── COUNTDOWN ─────────────────────────────────────────────────────
 function startCountdown(){
@@ -956,7 +1010,16 @@ function startCountdown(){
 
 // ── START GAME ────────────────────────────────────────────────────
 async function startGame(){
-  show('waitingScreen');$('waitMsg').textContent='Cargando sprites...';
+  if(vsMode==='cpu'){
+    show('waitingScreen');
+    $('waitMsg').textContent='Cargando...';
+    $('displayCode').style.display='none';
+    $('btnCancel').style.display='none';
+  } else {
+    show('waitingScreen');
+    $('displayCode').style.display='block';
+    $('btnCancel').style.display='block';
+  }
   await loadSprites();
   myKey=myRole==='host'?'p1':'p2';
   oppKey=myRole==='host'?'p2':'p1';
