@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, orientation=landscape">
-<title>CampCon ⚡</title>
+<title>Estu's Fighters vs Rodriguitos ⚡</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{background:#0a0a1a;overflow:hidden;width:100vw;height:100vh;font-family:'Arial Black',sans-serif;color:#fff;display:flex;align-items:center;justify-content:center;}
@@ -11,7 +11,52 @@ canvas{display:block;touch-action:none;}
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;padding:20px;}
 .screen.hidden{display:none;}
 #loginScreen{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);}
-#loginScreen h1{font-size:clamp(28px,6vw,60px);color:#FFD700;text-shadow:0 0 30px #FF6600;letter-spacing:6px;margin-bottom:6px;}
+#loginScreen h1{
+  font-size:clamp(20px,5vw,48px);
+  color:#FFD700;
+  letter-spacing:3px;
+  margin-bottom:6px;
+  line-height:1.15;
+  text-align:center;
+}
+.title-line1{
+  display:block;
+  color:#FF4444;
+  text-shadow:3px 3px 0 #000, -1px -1px 0 #000, 5px 5px 0 rgba(255,0,0,0.3);
+  font-size:1.1em;
+  transform:rotate(-2deg);
+  display:inline-block;
+  letter-spacing:4px;
+}
+.title-vs{
+  display:inline-block;
+  color:#fff;
+  font-size:0.7em;
+  background:#FF4444;
+  padding:2px 10px;
+  border-radius:4px;
+  margin:0 6px;
+  transform:rotate(1deg);
+  box-shadow:3px 3px 0 #000;
+  letter-spacing:2px;
+  vertical-align:middle;
+}
+.title-line2{
+  display:block;
+  color:#FFD700;
+  text-shadow:3px 3px 0 #000, -1px -1px 0 #000, 5px 5px 0 rgba(255,200,0,0.3);
+  font-size:1em;
+  transform:rotate(1deg);
+  display:inline-block;
+  letter-spacing:3px;
+}
+.title-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  margin-bottom:6px;
+}
 #loginScreen p{color:#aaa;font-size:clamp(11px,2.5vw,16px);margin-bottom:30px;}
 .btnGoogle{display:flex;align-items:center;gap:12px;background:#fff;color:#333;font-family:'Arial Black',sans-serif;font-size:clamp(13px,2.5vw,18px);padding:12px 24px;border:none;border-radius:10px;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
 .btnGoogle img{width:24px;}
@@ -62,12 +107,22 @@ canvas{display:block;touch-action:none;}
 <body>
 <div id="rotateMsg"><div class="icon">📱</div><p>Rotá el teléfono<br>para jugar 🕹️</p></div>
 <div class="screen" id="loginScreen">
-  <h1>⚡ CAMPCON ⚡</h1>
+  <div class="title-wrap">
+    <h1>
+      <span class="title-line1">💥 ESTU'S FIGHTERS</span>
+    </h1>
+    <h1>
+      <span class="title-vs">VS</span>
+    </h1>
+    <h1>
+      <span class="title-line2">RODRIGUITOS ⭐</span>
+    </h1>
+  </div>
   <p>Banda del Estu — Machi vs Mauron</p>
   <button class="btnGoogle" id="btnGoogle"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">Entrar con Google</button>
 </div>
 <div class="screen hidden" id="lobbyScreen">
-  <h2>🥊 CAMPCON</h2>
+  <h2>💥 ESTU'S FIGHTERS <span style="color:#FF4444">VS</span> RODRIGUITOS ⭐</h2>
   <div class="userInfo"><img id="userAvatar" src="" alt=""><span id="userName"></span></div>
   <div class="menuCards">
     <div class="menuCard cardCPU" id="cardCPU"><div class="icon">🤖</div><div class="label">VS CPU</div></div>
@@ -284,7 +339,10 @@ function watchSalas(){
   onValue(ref(db,'rooms'),snap=>{
     const list=$('salasList'),d=snap.val();
     if(!d){list.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
-    const ab=Object.entries(d).filter(([k,v])=>v.status==='waiting'&&v.host!==currentUser?.uid);
+    const ab=Object.entries(d).filter(([k,v])=>{
+      const fresh=!v.createdAt||(Date.now()-v.createdAt<1000*60*10); // máx 10 min
+      return v.status==='waiting'&&v.host!==currentUser?.uid&&fresh;
+    });
     if(!ab.length){list.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
     list.innerHTML=ab.map(([code,v])=>`<div class="salaItem"><span><strong>${v.hostName||'Alguien'}</strong> — <strong>${code}</strong></span><button class="btnUnirse" onclick="joinSala('${code}')">UNIRSE</button></div>`).join('');
   });
@@ -295,7 +353,7 @@ $('btnCreate').onclick=async()=>{
   if(!currentUser){err('Necesitás estar logueado');return;}
   try{
     roomCode=genCode();roomRef=ref(db,`rooms/${roomCode}`);
-    await set(roomRef,{host:currentUser.uid,hostName:currentUser.displayName,guest:null,guestName:null,status:'waiting',state:null});
+    await set(roomRef,{host:currentUser.uid,hostName:currentUser.displayName,guest:null,guestName:null,status:'waiting',state:null,createdAt:Date.now()});
     // auto-borrar la sala si el host se desconecta
     onDisconnect(roomRef).remove();
     myRole='host';vsMode='online';
