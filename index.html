@@ -561,13 +561,18 @@ function drawSpecial(){
     const isLast=fi>=atkFrames.length-1;
     if(!s.holdStarted&&isLast){s.holdStarted=true;s.holdT=0;}
     if(s.holdStarted)s.holdT++;
-    if(s.holdStarted&&s.holdT>=6&&!s.damageDealt){
+    // hit en frame 4+ (chorro extendido), sin esperar holdT
+    if(fi>=4&&!s.damageDealt){
       s.damageDealt=true;
-      if(af){
-        const dw2=af.width*(FH/af.height)*1.12;
-        const champEnd=p.facing>0?p.x-dw2*0.25+dw2:p.x+dw2*0.25-dw2;
-        if(Math.abs(champEnd-frozenOpp.x)<FW*1.8)applySpecialDamage(ok,pk,s);
-      }
+      // el chorro llega hasta 280px adelante del cuerpo de Machi
+      const champTip=p.facing>0 ? p.x+280 : p.x-280;
+      const oppX=s.frozenOpp?.x||gs[ok].x;
+      dbg('champTip:'+Math.round(champTip)+' oppX:'+Math.round(oppX)+' dist:'+Math.round(Math.abs(champTip-oppX)));
+      // hit si el oponente está entre Machi y la punta del chorro
+      const inRange=p.facing>0
+        ? (oppX>p.x && oppX<champTip+80)
+        : (oppX<p.x && oppX>champTip-80);
+      if(inRange) applySpecialDamage(ok,pk,s);
     }
   } else {
     const spF=SP.mauron?.special||[];
