@@ -744,34 +744,13 @@ function physicsTick(){
 function applyInput(pk,inp){
   const p=gs[pk];if(['ko','defeated','special'].includes(p.state))return;
   const ok=pk==='p1'?'p2':'p1',opp=gs[ok];
-  // bloqueo — no se puede mover
-  p.blocking=!!(inp.block&&p.grounded);
-  if(p.blocking&&p.state!=='attack'){p.state='block';return;} // cortar input si está bloqueando
-  else if(!p.blocking&&p.state==='block')p.state='idle';
-
-  // dash — detectar doble tap
-  if(!p._dashTimer)p._dashTimer=0;
-  if(!p._lastDir)p._lastDir=0;
-  if(!p._dashing)p._dashing=false;
-  if(!p._dashT)p._dashT=0;
-
-  const curDir=inp.left?-1:inp.right?1:0;
-  if(curDir!==0&&curDir===p._lastDir&&p._dashTimer>0&&p._dashTimer<15){
-    // doble tap detectado
-    p._dashing=true;p._dashT=18;
-  }
-  if(curDir!==0)p._dashTimer=15;
-  else if(p._dashTimer>0)p._dashTimer--;
-  p._lastDir=curDir;
-
-  if(p._dashT>0)p._dashT--;
-  else p._dashing=false;
-
-  const speed=p._dashing?8.5:4.5;
-
-  if(inp.left){p.x-=speed;if(p.grounded&&p.state!=='attack')p.state=p._dashing?'jump':'walk';if(p._dashing)p.frame=1;}
-  else if(inp.right){p.x+=speed;if(p.grounded&&p.state!=='attack')p.state=p._dashing?'jump':'walk';if(p._dashing)p.frame=1;}
+  if(inp.left){p.x-=4.5;if(p.grounded&&p.state!=='attack')p.state='walk';}
+  else if(inp.right){p.x+=4.5;if(p.grounded&&p.state!=='attack')p.state='walk';}
   else if(p.state==='walk')p.state='idle';
+  if(inp.jump&&p.grounded&&p.state!=='attack'){p.vy=-17;p.grounded=false;p.state='jump';p.frame=0;SFX.jump();}
+  p.blocking=!!(inp.block&&p.grounded);
+  if(p.blocking&&p.state!=='attack')p.state='block';
+  else if(!p.blocking&&p.state==='block')p.state='idle';
   if(!['attack','hurt','ko','block','defeated'].includes(p.state))p.facing=opp.x>p.x?1:-1;
   if(inp.attack&&p.state!=='attack'&&!['hurt','ko','defeated'].includes(p.state)&&hitCD[pk]===0){
     p.state='attack';p.frame=0;p._attackHit=false;
