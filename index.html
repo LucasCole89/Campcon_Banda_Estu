@@ -961,7 +961,7 @@ function updateCPU(){
 
 // ── HOST TICK ─────────────────────────────────────────────────────
 function hostTick(){
-  if(gs.phase==='countdown')return; // esperar countdown
+  if(!gs||gs.phase==='countdown')return;
   if(koSeq&&koSeq.phase!=='done'){updateKOSeq();return;}
   if(gs.phase==='fight'){
     if(vsMode==='cpu')updateCPU();
@@ -1011,35 +1011,31 @@ function pushState(){
 let countdown=null;
 
 function startCountdown(){
-  debugLog('startCountdown! phase:'+gs.phase);
+  debugLog('startCountdown called, phase='+gs.phase);
+  if(window._countdownInterval)clearInterval(window._countdownInterval);
   let n=3;
   countdown={n,t:0};
-  gs.phase='countdown';
+  resumeAC();playTone(660,'sine',0.15,0.4);
 
-  if(myRole==='host'){
-    if(window._hostInterval)clearInterval(window._hostInterval);
-    window._hostInterval=setInterval(hostTick,TICK);
-  }
-
-  const interval=setInterval(()=>{
+  window._countdownInterval=setInterval(()=>{
     n--;
-    debugLog('countdown n:'+n);
+    debugLog('tick n='+n+' phase='+gs.phase);
     if(n<0){
-      clearInterval(interval);
+      clearInterval(window._countdownInterval);
       countdown=null;
       gs.phase='fight';
-      if(myRole==='host')startTimer();
+      if(myRole==='host'){
+        startTimer();
+        if(window._hostInterval)clearInterval(window._hostInterval);
+        window._hostInterval=setInterval(hostTick,TICK);
+      }
+      debugLog('FIGHT!');
       return;
     }
     countdown={n,t:0};
     resumeAC();
-    if(n>0)playTone(n===1?880:660,'sine',0.15,0.4);
-    else playTone(1047,'sine',0.3,0.5);
+    playTone(n===0?1047:n===1?880:660,'sine',0.15,0.4);
   },1000);
-
-  // primer sonido inmediato
-  resumeAC();
-  playTone(660,'sine',0.15,0.4);
 }
 
 function drawCountdown(){
