@@ -353,7 +353,7 @@ $('btnCreate').onclick=async()=>{
   if(!currentUser){err('Necesitás estar logueado');return;}
   try{
     roomCode=genCode();roomRef=ref(db,`rooms/${roomCode}`);
-    await set(roomRef,{host:currentUser.uid,hostName:currentUser.displayName,guest:null,guestName:null,status:'waiting',state:null,createdAt:Date.now()});
+    await set(roomRef,{host:currentUser.uid,hostName:currentUser.displayName,guest:null,guestName:null,status:'waiting',state:null,createdAt:Date.now(),hostChar:null,guestReady:false});
     // auto-borrar la sala si el host se desconecta
     onDisconnect(roomRef).remove();
     myRole='host';vsMode='online';
@@ -1011,11 +1011,11 @@ function pushState(){
 let countdown=null;
 
 function startCountdown(){
+  debugLog('startCountdown! phase:'+gs.phase);
   let n=3;
   countdown={n,t:0};
   gs.phase='countdown';
 
-  // arrancar hostTick ya para que el render funcione
   if(myRole==='host'){
     if(window._hostInterval)clearInterval(window._hostInterval);
     window._hostInterval=setInterval(hostTick,TICK);
@@ -1023,6 +1023,7 @@ function startCountdown(){
 
   const interval=setInterval(()=>{
     n--;
+    debugLog('countdown n:'+n);
     if(n<0){
       clearInterval(interval);
       countdown=null;
@@ -1031,7 +1032,6 @@ function startCountdown(){
       return;
     }
     countdown={n,t:0};
-    // sonido
     resumeAC();
     if(n>0)playTone(n===1?880:660,'sine',0.15,0.4);
     else playTone(1047,'sine',0.3,0.5);
@@ -1046,15 +1046,17 @@ function drawCountdown(){
   if(!countdown)return;
   const label=countdown.n===0?'¡FIGHT!':String(countdown.n);
   countdown.t++;
-  const pulse=0.7+0.3*Math.sin(countdown.t*0.15);
   ctx.save();
-  ctx.fillStyle='rgba(0,0,0,0.55)';
-  ctx.fillRect(W/2-130,H/2-70,260,120);
+  // fondo semitransparente centrado
+  ctx.fillStyle='rgba(0,0,0,0.65)';
+  ctx.beginPath();ctx.arc(W/2,H/2,90,0,Math.PI*2);ctx.fill();
+  // número
   ctx.fillStyle=countdown.n===0?'#00FF7F':'#FFD700';
   ctx.shadowColor=countdown.n===0?'#00FF7F':'#FF6600';
-  ctx.shadowBlur=30*pulse;
-  ctx.font=`bold ${Math.floor(W*0.13*pulse)}px Arial Black`;
-  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.shadowBlur=40;
+  ctx.font='bold 110px Arial Black';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
   ctx.fillText(label,W/2,H/2);
   ctx.shadowBlur=0;
   ctx.restore();
