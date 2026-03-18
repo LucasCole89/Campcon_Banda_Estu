@@ -676,17 +676,18 @@ function gameTick(){
   if(koSeq&&koSeq.phase!=='done'){updateKO();return;}
   if(gs.phase==='fight'||gs.phase==='special'){
     let p1i,p2i;
-    if(vsMode==='cpu'){updateCPU();p1i=myInput;p2i=cpuInp;}
-    else{
-      myInputBuf[frameCount%IBUF]={...myInput};pushInput();
-      const af=frameCount-INPUT_DELAY;
-      const mi=af>=0?myInputBuf[af%IBUF]:emptyInp();
-      const oi=af>=0?(oppInputBuf[af%IBUF]||lastOppInp):emptyInp();
-      p1i=myRole==='host'?mi:oi;p2i=myRole==='host'?oi:mi;
+    if(vsMode==='cpu'){
+      updateCPU();p1i=myInput;p2i=cpuInp;
+    } else {
+      // Solo usar el último input recibido — sin buffer de frames
+      // El input propio se pushea solo cuando cambia (en los event handlers)
+      p1i=myRole==='host'?myInput:lastOppInp;
+      p2i=myRole==='host'?lastOppInp:myInput;
     }
     applyInput('p1',p1i);applyInput('p2',p2i);physicsTick();
     if(specialPhase){const lk=(specialPhase.pk==='p1'?SP._p1def:SP._p2def)?.key;if(lk==='yiyo'||lk==='mario')tickSpecialNoFreeze();}
-    if(vsMode==='online'&&myRole==='host'&&frameCount%60===0)pushReconcile();
+    // reconciliación cada 90 frames (~3s)
+    if(vsMode==='online'&&myRole==='host'&&frameCount%90===0)pushReconcile();
   }
   frameCount++;
 }
@@ -698,11 +699,33 @@ function setupSync(){
   const oppRole=myRole==='host'?'guest':'host';
   oppInputRef=ref(db,`rooms/${roomCode}/inp/${oppRole}`);
   reconcileRef=ref(db,`rooms/${roomCode}/reconcile`);
-  onValue(oppInputRef,snap=>{const d=snap.val();if(!d)return;const f=typeof d.f==='number'?d.f:frameCount;const inp={left:!!d.left,right:!!d.right,jump:!!d.jump,attack:!!d.attack,block:!!d.block,special:!!d.special};oppInputBuf[f%IBUF]=inp;Object.assign(lastOppInp,inp);});
-  if(myRole==='guest'){onValue(reconcileRef,snap=>{const d=snap.val();if(!d||!gs)return;if(Math.abs(gs.p1.hp-d.p1hp)>3){gs.p1.hp=d.p1hp;gs.p1.hp2=d.p1hp2;}if(Math.abs(gs.p2.hp-d.p2hp)>3){gs.p2.hp=d.p2hp;gs.p2.hp2=d.p2hp2;}if(Math.abs(gs.timer-d.timer)>1)gs.timer=d.timer;});}
+  // Recibir input del oponente — solo actualizar lastOppInp
+  onValue(oppInputRef,snap=>{
+    const d=snap.val();if(!d)return;
+    lastOppInp.left=!!d.left;lastOppInp.right=!!d.right;
+    lastOppInp.jump=!!d.jump;lastOppInp.attack=!!d.attack;
+    lastOppInp.block=!!d.block;lastOppInp.special=!!d.special;
+  });
+  // Guest recibe reconciliación
+  if(myRole==='guest'){
+    onValue(reconcileRef,snap=>{
+      const d=snap.val();if(!d||!gs)return;
+      if(Math.abs(gs.p1.hp-d.p1hp)>5)gs.p1.hp=d.p1hp;
+      if(Math.abs(gs.p1.hp2-d.p1hp2)>5)gs.p1.hp2=d.p1hp2;
+      if(Math.abs(gs.p2.hp-d.p2hp)>5)gs.p2.hp=d.p2hp;
+      if(Math.abs(gs.p2.hp2-d.p2hp2)>5)gs.p2.hp2=d.p2hp2;
+      if(Math.abs(gs.timer-d.timer)>2)gs.timer=d.timer;
+    });
+  }
 }
-function pushInput(){if(!inputRef||vsMode!=='online')return;set(inputRef,{...myInput,f:frameCount});}
-function pushInputNow(){if(vsMode==='online')pushInput();}
+// pushInput solo cuando cambia el input — llamado desde event handlers
+let lastPushedInput='';
+function pushInput(){if(!inputRef||vsMode!=='online')return;set(inputRef,{...myInput});}
+function pushInputNow(){
+  if(vsMode!=='online')return;
+  const s=JSON.stringify(myInput);
+  if(s!==lastPushedInput){lastPushedInput=s;pushInput();}
+}
 function pushReconcile(){if(!reconcileRef||myRole!=='host')return;set(reconcileRef,{p1hp:gs.p1.hp,p1hp2:gs.p1.hp2,p2hp:gs.p2.hp,p2hp2:gs.p2.hp2,timer:Math.ceil(gs.timer)});}
 
 // ── TIMER ────────────────────────────────────────────────────────
