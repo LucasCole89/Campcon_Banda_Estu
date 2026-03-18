@@ -734,7 +734,17 @@ function setupSync(){
       apply('p1',d.p1);apply('p2',d.p2);
       if(typeof d.ti==='number')gs.timer=d.ti;
 
-      // 2. Sync specialPhase — actualizar CADA frame (no solo crear)
+      // 1. Aplicar posición/estado
+      const apply=(pk,sd)=>{
+        if(!sd)return;
+        const p=gs[pk];
+        p.x=sd.x;p.y=sd.y;p.vy=sd.vy;
+        p.hp=sd.hp;p.hp2=sd.hp2;p.special=sd.sp;
+        p.state=sd.st;p.frame=sd.fr;p.facing=sd.fa;
+        p.blocking=!!sd.bl;p.grounded=!!sd.gr;p.wiggle=sd.wi||0;
+      };
+      apply('p1',d.p1);apply('p2',d.p2);
+      if(typeof d.ti==='number')gs.timer=d.ti; — actualizar CADA frame (no solo crear)
       if(d.sp){
         gs.phase='special';
         if(!specialPhase){
