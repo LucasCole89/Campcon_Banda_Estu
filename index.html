@@ -390,7 +390,12 @@ async function loadSprites(){
     const oc=document.createElement('canvas');oc.width=img.naturalWidth;oc.height=img.naturalHeight;
     const ox=oc.getContext('2d');ox.drawImage(img,0,0);
     const d=ox.getImageData(0,0,oc.width,oc.height);
-    for(let i=0;i<d.data.length;i+=4){const r=d.data[i],g=d.data[i+1],b=d.data[i+2];if(g>150&&g-r>80&&g-b>80)d.data[i+3]=0;else if(b>150&&b-r>80&&b-g>50)d.data[i+3]=0;}
+    for(let i=0;i<d.data.length;i+=4){const r=d.data[i],g=d.data[i+1],b=d.data[i+2];
+      // verde croma
+      if(g>150&&g-r>80&&g-b>80)d.data[i+3]=0;
+      // azul croma — threshold más alto para no comerse azules del sprite
+      else if(b>190&&b-r>110&&b-g>90)d.data[i+3]=0;
+    }
     ox.putImageData(d,0,0);return oc;
   }
   function loadImg(path,noChroma=false){
@@ -673,8 +678,9 @@ function updateCPU(){
 // ── GAME TICK — host es autoritativo ─────────────────────────────
 function gameTick(){
   if(!gs||gs.phase==='countdown')return;
+  // KO animation corre en AMBOS lados (es local/visual)
   if(koSeq&&koSeq.phase!=='done'){
-    if(vsMode==='cpu'||myRole==='host')updateKO();
+    updateKO();
     return;
   }
   if(gs.phase==='fight'||gs.phase==='special'){
@@ -685,15 +691,13 @@ function gameTick(){
       physicsTick();
       if(specialPhase){const lk=(specialPhase.pk==='p1'?SP._p1def:SP._p2def)?.key;if(lk==='yiyo'||lk==='mario')tickSpecialNoFreeze();}
     } else if(myRole==='host'){
-      // Host: corre toda la física con su input + input del guest
       applyInput('p1',myInput);
       applyInput('p2',lastOppInp);
       physicsTick();
       if(specialPhase){const lk=(specialPhase.pk==='p1'?SP._p1def:SP._p2def)?.key;if(lk==='yiyo'||lk==='mario')tickSpecialNoFreeze();}
-      // Pushea estado completo cada 2 frames
       if(frameCount%2===0)pushState();
     }
-    // Guest: no corre física — solo recibe estado del host vía onValue
+    // guest: no corre física — estado llega por onValue
   }
   frameCount++;
 }
@@ -707,7 +711,6 @@ function setupSync(){
   const stateRef=ref(db,`rooms/${roomCode}/gstate`);
 
   if(myRole==='host'){
-    // Host recibe input del guest
     onValue(oppInputRef,snap=>{
       const d=snap.val();if(!d)return;
       lastOppInp.left=!!d.left;lastOppInp.right=!!d.right;
@@ -715,30 +718,59 @@ function setupSync(){
       lastOppInp.block=!!d.block;lastOppInp.special=!!d.special;
     });
   } else {
-    // Guest recibe estado completo del host y lo aplica directo
+    // Guest: recibe estado autoritativo del host
     onValue(stateRef,snap=>{
       const d=snap.val();if(!d||!gs)return;
-      // Aplicar estado de ambos jugadores
+
+      // 1. Aplicar posición/estado de ambos jugadores
       const apply=(pk,sd)=>{
+        if(!sd)return;
         const p=gs[pk];
         p.x=sd.x;p.y=sd.y;p.vy=sd.vy;
         p.hp=sd.hp;p.hp2=sd.hp2;p.special=sd.sp;
         p.state=sd.st;p.frame=sd.fr;p.facing=sd.fa;
-        p.blocking=sd.bl;p.grounded=sd.gr;p.wiggle=sd.wi||0;
+        p.blocking=!!sd.bl;p.grounded=!!sd.gr;p.wiggle=sd.wi||0;
       };
       apply('p1',d.p1);apply('p2',d.p2);
-      gs.timer=d.ti;
-      // KO sync
+      if(typeof d.ti==='number')gs.timer=d.ti;
+
+      // 2. Sync specialPhase — actualizar CADA frame (no solo crear)
+      if(d.sp){
+        gs.phase='special';
+        if(!specialPhase){
+          specialPhase={pk:d.sp.pk,ok:d.sp.ok,t:0,damageDealt:false,plantX:d.sp.px||0,
+            frozenOpp:null,oppHit:false,oppWiggle:0,holdStarted:false,holdT:0,
+            catX:undefined,alfredInit:false,alfredX:-80,alfredPhase:'enter',alfredT:0};
+        }
+        // Actualizar valores que cambian cada tick
+        specialPhase.t=d.sp.t||0;
+        specialPhase.catX=d.sp.cx; // undefined si no hay gatos aún
+        specialPhase.catFi=d.sp.cfi||0;
+        specialPhase.alfredInit=!!d.sp.ai;
+        specialPhase.alfredX=typeof d.sp.ax==='number'?d.sp.ax:-80;
+        specialPhase.alfredPhase=d.sp.ap||'enter';
+        specialPhase.holdStarted=!!d.sp.hs;
+        specialPhase.damageDealt=!!d.sp.dd;
+        specialPhase.plantX=d.sp.px||0;
+      } else if(specialPhase){
+        specialPhase=null;
+        if(gs.phase==='special')gs.phase='fight';
+      }
+
+      // 3. Sync KO — disparar una sola vez
       if(d.ko&&!koSeq){
         gs.phase='ko';
-        startKO(d.ko.loser,d.ko.winner);
-      }
-      // Special sync
-      if(d.sp&&!specialPhase){
-        gs.phase='special';
-        specialPhase={pk:d.sp.pk,ok:d.sp.ok,t:d.sp.t||0,damageDealt:d.sp.dd||false,plantX:d.sp.px||0,frozenOpp:null,oppHit:false,oppWiggle:0,holdStarted:d.sp.hs||false,holdT:d.sp.ht||0,catX:d.sp.cx,alfredInit:d.sp.ai||false,alfredX:d.sp.ax||-80,alfredPhase:d.sp.ap||'enter',alfredT:d.sp.at||0};
-      } else if(!d.sp&&specialPhase){
-        specialPhase=null;gs.phase='fight';
+        clearInterval(timerInt);
+        wins[d.ko.winner]=(wins[d.ko.winner]||0)+1;
+        // Replicar koSeq localmente para animación
+        const wdef=d.ko.winner==='p1'?SP._p1def:SP._p2def;
+        const wuser=d.ko.winner==='p1'?currentUser?.displayName||'P1':'RIVAL';
+        koSeq={loser:d.ko.loser,winner:d.ko.winner,t:0,phase:'flyback',
+          vx:(gs[d.ko.loser].x<gs[d.ko.winner].x?-1:1)*8,vy:-10,
+          celebFrame:0,celebFrameT:0,idleT:0,
+          winnerName:`${wdef?.name||d.ko.winner}\n(${wuser})`,
+          matchWin:wins[d.ko.winner]>=2};
+        gs[d.ko.loser].state='ko';gs[d.ko.winner].state='idle';gs[d.ko.winner].frame=0;
       }
     });
   }
@@ -755,9 +787,16 @@ function pushInputNow(){
 function pushState(){
   if(vsMode!=='online'||myRole!=='host')return;
   const stateRef=ref(db,`rooms/${roomCode}/gstate`);
-  const pack=(pk)=>{const p=gs[pk];return{x:Math.round(p.x),y:Math.round(p.y),vy:+p.vy.toFixed(2),hp:p.hp,hp2:p.hp2,sp:p.special,st:p.state,fr:p.frame,fa:p.facing,bl:p.blocking?1:0,gr:p.grounded?1:0,wi:p.wiggle||0};};
+  const pack=pk=>{const p=gs[pk];return{x:Math.round(p.x),y:Math.round(p.y),vy:+p.vy.toFixed(2),hp:p.hp,hp2:p.hp2,sp:p.special,st:p.state,fr:p.frame,fa:p.facing,bl:p.blocking?1:0,gr:p.grounded?1:0,wi:p.wiggle||0};};
   const d={p1:pack('p1'),p2:pack('p2'),ti:Math.ceil(gs.timer)};
-  if(specialPhase){d.sp={pk:specialPhase.pk,ok:specialPhase.ok,t:specialPhase.t,dd:specialPhase.damageDealt?1:0,px:Math.round(specialPhase.plantX||0),hs:specialPhase.holdStarted?1:0,ht:specialPhase.holdT||0,cx:specialPhase.catX,ai:specialPhase.alfredInit?1:0,ax:Math.round(specialPhase.alfredX||-80),ap:specialPhase.alfredPhase||'enter',at:specialPhase.alfredT||0};}
+  if(specialPhase){
+    d.sp={pk:specialPhase.pk,ok:specialPhase.ok,t:specialPhase.t,
+      dd:specialPhase.damageDealt?1:0,px:Math.round(specialPhase.plantX||0),
+      hs:specialPhase.holdStarted?1:0,ht:specialPhase.holdT||0,
+      cx:specialPhase.catX,cfi:specialPhase.catFi||0,
+      ai:specialPhase.alfredInit?1:0,ax:Math.round(specialPhase.alfredX||-80),
+      ap:specialPhase.alfredPhase||'enter',at:specialPhase.alfredT||0};
+  }
   if(koSeq){d.ko={loser:koSeq.loser,winner:koSeq.winner};}
   set(stateRef,d);
 }
