@@ -110,20 +110,10 @@ canvas{display:block;touch-action:none;}
 
 <!-- CHAR SELECT -->
 <div class="screen hidden" id="selectScreen">
-  <h2 style="color:#FFD700;font-size:clamp(16px,4vw,28px);margin-bottom:10px;">⚡ ELEGÍ TU PERSONAJE ⚡</h2>
-  <div style="display:flex;gap:20px;justify-content:center;align-items:center;">
-    <div id="selCard0" onclick="selectChar(0)" style="cursor:pointer;padding:14px 18px;border-radius:12px;border:3px solid transparent;background:rgba(255,215,0,0.1);text-align:center;">
-      <canvas id="selCanvas0" width="120" height="180" style="display:block;margin:0 auto;"></canvas>
-      <div style="font-size:14px;color:#FFD700;margin-top:6px;">MACHI</div>
-    </div>
-    <div style="font-size:32px;color:#fff;opacity:0.4;">VS</div>
-    <div id="selCard1" onclick="selectChar(1)" style="cursor:pointer;padding:14px 18px;border-radius:12px;border:3px solid transparent;background:rgba(0,255,127,0.1);text-align:center;">
-      <canvas id="selCanvas1" width="120" height="180" style="display:block;margin:0 auto;"></canvas>
-      <div style="font-size:14px;color:#00FF7F;margin-top:6px;">MAURON</div>
-    </div>
-  </div>
-  <p id="selMsg" style="color:#aaa;font-size:12px;margin-top:10px;text-align:center;">Tocá el personaje que querés usar</p>
-  <button id="btnFight" class="btnMain btnFight" style="display:none;margin-top:10px;">⚡ ¡A PELEAR!</button>
+  <h2 style="color:#FFD700;font-size:clamp(14px,3.5vw,24px);margin-bottom:8px;">⚡ ELEGÍ TU PERSONAJE ⚡</h2>
+  <div id="charGrid" style="display:flex;gap:12px;justify-content:center;align-items:flex-end;flex-wrap:wrap;"></div>
+  <p id="selMsg" style="color:#aaa;font-size:12px;margin-top:8px;text-align:center;">Tocá el personaje que querés usar</p>
+  <button id="btnFight" class="btnMain btnFight" style="display:none;margin-top:8px;">⚡ ¡A PELEAR!</button>
 </div>
 
 <!-- GAME -->
@@ -313,38 +303,94 @@ async function loadImg(path,noChroma=false){
     img.src=BASE+path;
   });
 }
-const PATHS={
-  machi:{
-    idle:['Machi/Machi_Idle_01.png','Machi/Machi_Idle_02.png','Machi/Machi_Idle_03.png','Machi/Machi_Idle_04.png','Machi/Machi_Idle_05.png'],
-    walk:['Machi/Machi_Caminata_01.png','Machi/Machi_Caminata_02.png','Machi/Machi_Caminata_03.png','Machi/Machi_Caminata_04.png'],
-    jump:['Machi/Machi_Salto_01.png','Machi/Machi_Salto_02.png','Machi/Machi_Salto_03.png','Machi/Machi_Salto_04.png'],
-    attack:['Machi/Machi_Pu%C3%B1o_Basico_01.png','Machi/Machi_Pu%C3%B1o_Basico_02.png','Machi/Machi_Pu%C3%B1o_Basico_03.png','Machi/Machi_Pu%C3%B1o_Basico_04.png'],
-    special:['Machi/Machi_Ataque_Especial_01.png','Machi/Machi_Ataque_Especial_02.png','Machi/Machi_Ataque_Especial_03.png','Machi/Machi_Ataque_Especial_04.png','Machi/Machi_Ataque_Especial_05.png','Machi/Machi_Ataque_Especial_06.png','Machi/Machi_Ataque_Especial_07.png','Machi/Machi_Ataque_Especial_08.png'],
-    block:['Machi/Machi_Bloqueo_01.png','Machi/Machi_Bloqueo_02.png','Machi/Machi_Bloqueo_03.png'],
-    hurt:['Machi/Machi_Hit_Reaction.png'],ko:['Machi/Machi_Vencido.png'],defeated:['Machi/Machi_Vencido.png'],
-    celeb:['Machi/Machi_Festejo_01.png','Machi/Machi_Festejo_02.png','Machi/Machi_Festejo_03.png','Machi/Machi_Festejo_04.png'],
-    jumpKick:['Machi/Machi_Jump_Kick.png'],jumpPunch:['Machi/Machi_Jump_Punch.png'],
+const CHARS=[
+  {
+    key:'machi',
+    name:'MACHI',
+    specialName:'CHAMPAGNE SUPERNOVA',
+    color:'#FFD700',
+    paths:{
+      idle:['Machi/Machi_Idle_01.png','Machi/Machi_Idle_02.png','Machi/Machi_Idle_03.png','Machi/Machi_Idle_04.png','Machi/Machi_Idle_05.png'],
+      walk:['Machi/Machi_Caminata_01.png','Machi/Machi_Caminata_02.png','Machi/Machi_Caminata_03.png','Machi/Machi_Caminata_04.png'],
+      jump:['Machi/Machi_Salto_01.png','Machi/Machi_Salto_02.png','Machi/Machi_Salto_03.png','Machi/Machi_Salto_04.png'],
+      attack:['Machi/Machi_Pu%C3%B1o_Basico_01.png','Machi/Machi_Pu%C3%B1o_Basico_02.png','Machi/Machi_Pu%C3%B1o_Basico_03.png','Machi/Machi_Pu%C3%B1o_Basico_04.png'],
+      special:['Machi/Machi_Ataque_Especial_01.png','Machi/Machi_Ataque_Especial_02.png','Machi/Machi_Ataque_Especial_03.png','Machi/Machi_Ataque_Especial_04.png','Machi/Machi_Ataque_Especial_05.png','Machi/Machi_Ataque_Especial_06.png','Machi/Machi_Ataque_Especial_07.png','Machi/Machi_Ataque_Especial_08.png'],
+      block:['Machi/Machi_Bloqueo_01.png','Machi/Machi_Bloqueo_02.png','Machi/Machi_Bloqueo_03.png'],
+      hurt:['Machi/Machi_Hit_Reaction.png'],ko:['Machi/Machi_Vencido.png'],defeated:['Machi/Machi_Vencido.png'],
+      celeb:['Machi/Machi_Festejo_01.png','Machi/Machi_Festejo_02.png','Machi/Machi_Festejo_03.png','Machi/Machi_Festejo_04.png'],
+      jumpKick:['Machi/Machi_Jump_Kick.png'],jumpPunch:['Machi/Machi_Jump_Punch.png'],
+    }
   },
-  mauron:{
-    idle:['Mauron/Mauron_Idle_01.png','Mauron/Mauron_Idle_02.png','Mauron/Mauron_Idle_03.png','Mauron/Mauron_Idle_04.png','Mauron/Mauron_Idle_05.png'],
-    walk:['Mauron/Mauron_Walk_01.png','Mauron/Mauron_Walk_02.png','Mauron/Mauron_Walk_03.png','Mauron/Mauron_Walk_04.png'],
-    jump:['Mauron/Mauron_Jump_01.png','Mauron/Mauron_Jump_02.png','Mauron/Mauron_Jump_03.png','Mauron/Mauron_Jump_04_aterrizaje.png'],
-    attack:['Mauron/Mauron_Punch_01.png'],
-    special:['Mauron/Mauron_Special_Attack_01.png','Mauron/Mauron_Special_Attack_02.png','Mauron/Mauron_Special_Attack_03.png','Mauron/Mauron_Special_Attack_04.png'],
-    plants:['Mauron/Mauron_Special_Attack_05_Modulo_Plantas.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_01.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_02.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_03.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_04.png'],
-    block:['Mauron/Mauron_Block_01.png'],hurt:['Mauron/Mauron_Hit_against_01.png'],
-    ko:['Mauron/Mauron_defeated_01.png'],defeated:['Mauron/Mauron_Defeated_en_piso_02.png'],
-    celeb:['Mauron/Mauron_Festejo_01.png','Mauron/Mauron_Festejo_02.png','Mauron/Mauron_Festejo_03.png','Mauron/Mauron_Festejo_04.png'],
-    jumpKick:['Mauron/Mauron_Kick_Jump.png'],jumpPunch:['Mauron/Mauron_Punch_Jump.png'],
+  {
+    key:'mauron',
+    name:'MAURON',
+    specialName:'ABSOLUT PLANTS',
+    color:'#00FF7F',
+    paths:{
+      idle:['Mauron/Mauron_Idle_01.png','Mauron/Mauron_Idle_02.png','Mauron/Mauron_Idle_03.png','Mauron/Mauron_Idle_04.png','Mauron/Mauron_Idle_05.png'],
+      walk:['Mauron/Mauron_Walk_01.png','Mauron/Mauron_Walk_02.png','Mauron/Mauron_Walk_03.png','Mauron/Mauron_Walk_04.png'],
+      jump:['Mauron/Mauron_Jump_01.png','Mauron/Mauron_Jump_02.png','Mauron/Mauron_Jump_03.png','Mauron/Mauron_Jump_04_aterrizaje.png'],
+      attack:['Mauron/Mauron_Punch_01.png'],
+      special:['Mauron/Mauron_Special_Attack_01.png','Mauron/Mauron_Special_Attack_02.png','Mauron/Mauron_Special_Attack_03.png','Mauron/Mauron_Special_Attack_04.png'],
+      plants:['Mauron/Mauron_Special_Attack_05_Modulo_Plantas.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_01.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_02.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_03.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_04.png'],
+      block:['Mauron/Mauron_Block_01.png'],hurt:['Mauron/Mauron_Hit_against_01.png'],
+      ko:['Mauron/Mauron_defeated_01.png'],defeated:['Mauron/Mauron_Defeated_en_piso_02.png'],
+      celeb:['Mauron/Mauron_Festejo_01.png','Mauron/Mauron_Festejo_02.png','Mauron/Mauron_Festejo_03.png','Mauron/Mauron_Festejo_04.png'],
+      jumpKick:['Mauron/Mauron_Kick_Jump.png'],jumpPunch:['Mauron/Mauron_Punch_Jump.png'],
+    }
+  },
+  {
+    key:'yiyo',
+    name:'YIYO',
+    specialName:'MIAU ATTACK',
+    color:'#FF88FF',
+    paths:{
+      idle:['Yiyo/Yiyo_Idle_01.png','Yiyo/Yiyo_Idle_02.png','Yiyo/Yiyo_Idle_03.png'],
+      walk:['Yiyo/Yiyo_Walk_01.png','Yiyo/Yiyo_Walk_02.png','Yiyo/Yiyo_Walk_03.png','Yiyo/Yiyo_Walk_04.png'],
+      jump:['Yiyo/Yiyo_Jump_01.png','Yiyo/Yiyo_Jump_02.png','Yiyo/Yiyo_Jump_03.png','Yiyo/Yiyo_Jump_04.png'],
+      attack:['Yiyo/Yiyo_Punch_01.png'],
+      special:['Yiyo/Yiyo_Special_Attack_01.png','Yiyo/Yiyo_Special_Attack_02.png','Yiyo/Yiyo_Special_Attack_03.png'],
+      specialModule:['Yiyo/Yiyo_Special_Attack_04_Modulo_Gatos.png','Yiyo/Yiyo_Special_Attack_05_Modulo_Gatos.png','Yiyo/Yiyo_Special_Attack_06_Modulo_Gatos.png'],
+      block:['Yiyo/Yiyo_Block.png'],hurt:['Yiyo/Yiyo_Hit.png'],
+      ko:['Yiyo/Yiyo_Vencido_01.png'],defeated:['Yiyo/Yiyo_Vencido_02.png'],
+      celeb:['Yiyo/Yiyo_Festejo_01.png','Yiyo/Yiyo_Festejo_02.png','Yiyo/Yiyo_Festejo_03.png','Yiyo/Yiyo_Festejo_04.png'],
+      jumpKick:['Yiyo/Yiyo_Jump_Kick.png'],jumpPunch:['Yiyo/Yiyo_Jump_Punch.png'],
+    }
+  },
+  {
+    key:'mario',
+    name:'MARIO',
+    specialName:'ALFRED AL RESCATE',
+    color:'#FF6600',
+    paths:{
+      idle:['Mario/Mario_Idle_01.png','Mario/Mario_Idle_02.png','Mario/Mario_Idle_03.png'],
+      walk:['Mario/Mario_Walk_01.png','Mario/Mario_Walk_02.png','Mario/Mario_Walk_03.png'],
+      jump:['Mario/Mario_Jump_01.png','Mario/Mario_Jump_02.png','Mario/Mario_Jump_03.png','Mario/Mario_Jump_04.png'],
+      attack:['Mario/Mario_Punch_01.png','Mario/Mario_Punch_02.png'],
+      special:['Mario/Mario_Special_Attack_01.png','Mario/Mario_Special_Attack_02.png','Mario/Mario_Special_Attack_03.png'],
+      specialModule:['Mario/Mario_Special_Attack_04_Modulo_Alfred.png','Mario/Mario_Special_Attack_05_Modulo_Alfred.png','Mario/Mario_Special_Attack_06_Modulo_Alfred.png','Mario/Mario_Special_Attack_07_Modulo_Alfred.png'],
+      block:['Mario/Mario_Block.png'],hurt:['Mario/Mario_Hit.png'],
+      ko:['Mario/Mario_Knockdown_01.png'],defeated:['Mario/Mario_Knockdown_02.png'],
+      celeb:['Mario/Mario_Festejo_01.png','Mario/Mario_Festejo_02.png','Mario/Mario_Festejo_03.png','Mario/Mario_Festejo_04.png'],
+      jumpKick:['Mario/Mario_Jump_Kick.png'],jumpPunch:['Mario/Mario_Jump_Punch.png'],
+    }
   }
-};
-let SP={machi:{},mauron:{},bg:null},spritesLoaded=false;
-// SP._p1 = sprites del personaje que juega como P1 (host)
-// SP._p2 = sprites del personaje que juega como P2 (guest)
+];
+let SP={},spritesLoaded=false;
+// SP[key] = sprites cargados de cada personaje
+// SP._p1, SP._p2 = sprites del personaje elegido por cada slot
+
 async function loadSprites(){
   if(spritesLoaded)return;
-  async function lg(paths){const o={};for(const[k,arr]of Object.entries(paths))o[k]=await Promise.all(arr.map(p=>loadImg(p)));return o;}
-  [SP.machi,SP.mauron,SP.bg]=await Promise.all([lg(PATHS.machi),lg(PATHS.mauron),loadImg('Escenarios_001_Estudiantil_v2.png',true)]);
+  async function lg(paths){
+    const o={};
+    for(const[k,arr]of Object.entries(paths))
+      o[k]=await Promise.all(arr.map(p=>loadImg(p)));
+    return o;
+  }
+  const results=await Promise.all(CHARS.map(c=>lg(c.paths)));
+  CHARS.forEach((c,i)=>SP[c.key]=results[i]);
+  SP.bg=await loadImg('Escenarios_001_Estudiantil_v2.png',true);
   spritesLoaded=true;
 }
 
@@ -744,13 +790,34 @@ function physicsTick(){
 function applyInput(pk,inp){
   const p=gs[pk];if(['ko','defeated','special'].includes(p.state))return;
   const ok=pk==='p1'?'p2':'p1',opp=gs[ok];
-  if(inp.left){p.x-=4.5;if(p.grounded&&p.state!=='attack')p.state='walk';}
-  else if(inp.right){p.x+=4.5;if(p.grounded&&p.state!=='attack')p.state='walk';}
-  else if(p.state==='walk')p.state='idle';
-  if(inp.jump&&p.grounded&&p.state!=='attack'){p.vy=-17;p.grounded=false;p.state='jump';p.frame=0;SFX.jump();}
+  // bloqueo — no se puede mover
   p.blocking=!!(inp.block&&p.grounded);
-  if(p.blocking&&p.state!=='attack')p.state='block';
+  if(p.blocking&&p.state!=='attack'){p.state='block';return;} // cortar input si está bloqueando
   else if(!p.blocking&&p.state==='block')p.state='idle';
+
+  // dash — detectar doble tap
+  if(!p._dashTimer)p._dashTimer=0;
+  if(!p._lastDir)p._lastDir=0;
+  if(!p._dashing)p._dashing=false;
+  if(!p._dashT)p._dashT=0;
+
+  const curDir=inp.left?-1:inp.right?1:0;
+  if(curDir!==0&&curDir===p._lastDir&&p._dashTimer>0&&p._dashTimer<15){
+    // doble tap detectado
+    p._dashing=true;p._dashT=18;
+  }
+  if(curDir!==0)p._dashTimer=15;
+  else if(p._dashTimer>0)p._dashTimer--;
+  p._lastDir=curDir;
+
+  if(p._dashT>0)p._dashT--;
+  else p._dashing=false;
+
+  const speed=p._dashing?8.5:4.5;
+
+  if(inp.left){p.x-=speed;if(p.grounded&&p.state!=='attack')p.state=p._dashing?'jump':'walk';if(p._dashing)p.frame=1;}
+  else if(inp.right){p.x+=speed;if(p.grounded&&p.state!=='attack')p.state=p._dashing?'jump':'walk';if(p._dashing)p.frame=1;}
+  else if(p.state==='walk')p.state='idle';
   if(!['attack','hurt','ko','block','defeated'].includes(p.state))p.facing=opp.x>p.x?1:-1;
   if(inp.attack&&p.state!=='attack'&&!['hurt','ko','defeated'].includes(p.state)&&hitCD[pk]===0){
     p.state='attack';p.frame=0;p._attackHit=false;
@@ -940,37 +1007,53 @@ $('btnFight').onclick=async function(){
   if(!myCharChoice)return;
   if(selAnimId)cancelAnimationFrame(selAnimId);
 
-  // asignar personajes
+  let oppCharKey;
   if(vsMode==='cpu'){
-    SP._p1=SP[myCharChoice];
-    SP._p2=SP[myCharChoice==='machi'?'mauron':'machi'];
+    // CPU elige un personaje diferente al del jugador
+    const others=CHARS.filter(c=>c.key!==myCharChoice);
+    oppCharKey=others[Math.floor(Math.random()*others.length)].key;
   } else if(myRole==='host'){
-    SP._p1=SP[myCharChoice];
-    SP._p2=SP[myCharChoice==='machi'?'mauron':'machi'];
-    // marcar host listo y esperar que el guest también esté listo
-    await update(roomRef,{hostReady:true});
+    // necesitamos saber qué eligió el guest — está en Firebase
+    const snap=await get(ref(db,`rooms/${roomCode}/guestChar`));
+    oppCharKey=snap.val()||CHARS.find(c=>c.key!==myCharChoice).key;
+  } else {
+    // guest: el host eligió hostChar
+    const snap=await get(ref(db,`rooms/${roomCode}/hostChar`));
+    oppCharKey=snap.val()||CHARS.find(c=>c.key!==myCharChoice).key;
+    await update(roomRef,{guestChar:myCharChoice,guestReady:true});
+  }
+
+  if(vsMode==='cpu'){
+    SP._p1=SP[myCharChoice];SP._p1def=CHARS.find(c=>c.key===myCharChoice);
+    SP._p2=SP[oppCharKey];SP._p2def=CHARS.find(c=>c.key===oppCharKey);
+  } else if(myRole==='host'){
+    SP._p1=SP[myCharChoice];SP._p1def=CHARS.find(c=>c.key===myCharChoice);
+    SP._p2=SP[oppCharKey];SP._p2def=CHARS.find(c=>c.key===oppCharKey);
+  } else {
+    SP._p1=SP[oppCharKey];SP._p1def=CHARS.find(c=>c.key===oppCharKey);
+    SP._p2=SP[myCharChoice];SP._p2def=CHARS.find(c=>c.key===myCharChoice);
+  }
+
+  dbg('p1:'+SP._p1def?.name+' p2:'+SP._p2def?.name+' role:'+myRole);
+
+  if(vsMode==='online'&&myRole==='host'){
     $('btnFight').disabled=true;
     $('selMsg').textContent='Esperando que el rival confirme...';
+    await update(roomRef,{hostReady:true});
     const hrRef=ref(db,`rooms/${roomCode}/guestReady`);
     onValue(hrRef,snap=>{
       if(snap.val()!==true)return;
-      off(hrRef);
-      launchFight();
+      off(hrRef);launchFight();
     });
     return;
-  } else {
-    // guest
-    SP._p1=SP[myCharChoice==='machi'?'mauron':'machi'];
-    SP._p2=SP[myCharChoice];
-    await update(roomRef,{guestReady:true});
+  }
+  if(vsMode==='online'&&myRole==='guest'){
     $('btnFight').disabled=true;
     $('selMsg').textContent='Esperando que el rival confirme...';
-    // esperar hostReady
     const hrRef=ref(db,`rooms/${roomCode}/hostReady`);
     onValue(hrRef,snap=>{
       if(snap.val()!==true)return;
-      off(hrRef);
-      launchFight();
+      off(hrRef);launchFight();
     });
     return;
   }
