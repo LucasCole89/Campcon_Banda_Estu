@@ -1086,12 +1086,23 @@ function startCountdown(){
 
 // ── START GAME ───────────────────────────────────────────────────
 async function startGame(){
+  if(vsMode==='cpu'){
+    // CPU: ir directo a selección sin pasar por waiting
+    show('selectScreen');
+    $('selMsg').textContent='Cargando personajes...';
+    await loadSprites();
+    myKey='p1';oppKey='p2';
+    dbg('CPU listo');
+    showSelectScreen();
+    return;
+  }
+  // Online
   show('waitingScreen');
-  if(vsMode==='cpu'){$('waitMsg').textContent='Cargando...';$('displayCode').style.display='none';$('btnCancel').style.display='none';}
-  else{$('displayCode').style.display='block';$('btnCancel').style.display='block';}
+  $('displayCode').style.display='block';$('btnCancel').style.display='block';
   await loadSprites();
-  myKey=myRole==='host'?'p1':'p2';oppKey=myRole==='host'?'p2':'p1';
-  dbg('Listo. role:'+myRole+' vs:'+vsMode);
+  myKey=myRole==='host'?'p1':'p2';
+  oppKey=myRole==='host'?'p2':'p1';
+  dbg('Online listo. role:'+myRole);
   showSelectScreen();
 }
 
