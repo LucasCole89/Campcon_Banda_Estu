@@ -670,24 +670,30 @@ function updateCPU(){
   if(pl.state==='attack'&&dist<150&&Math.random()<0.3)cpuInp.block=true;
 }
 
-// ── GAME TICK ────────────────────────────────────────────────────
+// ── GAME TICK — host es autoritativo ─────────────────────────────
 function gameTick(){
   if(!gs||gs.phase==='countdown')return;
-  if(koSeq&&koSeq.phase!=='done'){updateKO();return;}
+  if(koSeq&&koSeq.phase!=='done'){
+    if(vsMode==='cpu'||myRole==='host')updateKO();
+    return;
+  }
   if(gs.phase==='fight'||gs.phase==='special'){
-    let p1i,p2i;
     if(vsMode==='cpu'){
-      updateCPU();p1i=myInput;p2i=cpuInp;
-    } else {
-      // Solo usar el último input recibido — sin buffer de frames
-      // El input propio se pushea solo cuando cambia (en los event handlers)
-      p1i=myRole==='host'?myInput:lastOppInp;
-      p2i=myRole==='host'?lastOppInp:myInput;
+      updateCPU();
+      applyInput('p1',myInput);
+      applyInput('p2',cpuInp);
+      physicsTick();
+      if(specialPhase){const lk=(specialPhase.pk==='p1'?SP._p1def:SP._p2def)?.key;if(lk==='yiyo'||lk==='mario')tickSpecialNoFreeze();}
+    } else if(myRole==='host'){
+      // Host: corre toda la física con su input + input del guest
+      applyInput('p1',myInput);
+      applyInput('p2',lastOppInp);
+      physicsTick();
+      if(specialPhase){const lk=(specialPhase.pk==='p1'?SP._p1def:SP._p2def)?.key;if(lk==='yiyo'||lk==='mario')tickSpecialNoFreeze();}
+      // Pushea estado completo cada 2 frames
+      if(frameCount%2===0)pushState();
     }
-    applyInput('p1',p1i);applyInput('p2',p2i);physicsTick();
-    if(specialPhase){const lk=(specialPhase.pk==='p1'?SP._p1def:SP._p2def)?.key;if(lk==='yiyo'||lk==='mario')tickSpecialNoFreeze();}
-    // reconciliación cada 90 frames (~3s)
-    if(vsMode==='online'&&myRole==='host'&&frameCount%90===0)pushReconcile();
+    // Guest: no corre física — solo recibe estado del host vía onValue
   }
   frameCount++;
 }
@@ -698,27 +704,46 @@ function setupSync(){
   inputRef=ref(db,`rooms/${roomCode}/inp/${myRole}`);
   const oppRole=myRole==='host'?'guest':'host';
   oppInputRef=ref(db,`rooms/${roomCode}/inp/${oppRole}`);
-  reconcileRef=ref(db,`rooms/${roomCode}/reconcile`);
-  // Recibir input del oponente — solo actualizar lastOppInp
-  onValue(oppInputRef,snap=>{
-    const d=snap.val();if(!d)return;
-    lastOppInp.left=!!d.left;lastOppInp.right=!!d.right;
-    lastOppInp.jump=!!d.jump;lastOppInp.attack=!!d.attack;
-    lastOppInp.block=!!d.block;lastOppInp.special=!!d.special;
-  });
-  // Guest recibe reconciliación
-  if(myRole==='guest'){
-    onValue(reconcileRef,snap=>{
+  const stateRef=ref(db,`rooms/${roomCode}/gstate`);
+
+  if(myRole==='host'){
+    // Host recibe input del guest
+    onValue(oppInputRef,snap=>{
+      const d=snap.val();if(!d)return;
+      lastOppInp.left=!!d.left;lastOppInp.right=!!d.right;
+      lastOppInp.jump=!!d.jump;lastOppInp.attack=!!d.attack;
+      lastOppInp.block=!!d.block;lastOppInp.special=!!d.special;
+    });
+  } else {
+    // Guest recibe estado completo del host y lo aplica directo
+    onValue(stateRef,snap=>{
       const d=snap.val();if(!d||!gs)return;
-      if(Math.abs(gs.p1.hp-d.p1hp)>5)gs.p1.hp=d.p1hp;
-      if(Math.abs(gs.p1.hp2-d.p1hp2)>5)gs.p1.hp2=d.p1hp2;
-      if(Math.abs(gs.p2.hp-d.p2hp)>5)gs.p2.hp=d.p2hp;
-      if(Math.abs(gs.p2.hp2-d.p2hp2)>5)gs.p2.hp2=d.p2hp2;
-      if(Math.abs(gs.timer-d.timer)>2)gs.timer=d.timer;
+      // Aplicar estado de ambos jugadores
+      const apply=(pk,sd)=>{
+        const p=gs[pk];
+        p.x=sd.x;p.y=sd.y;p.vy=sd.vy;
+        p.hp=sd.hp;p.hp2=sd.hp2;p.special=sd.sp;
+        p.state=sd.st;p.frame=sd.fr;p.facing=sd.fa;
+        p.blocking=sd.bl;p.grounded=sd.gr;p.wiggle=sd.wi||0;
+      };
+      apply('p1',d.p1);apply('p2',d.p2);
+      gs.timer=d.ti;
+      // KO sync
+      if(d.ko&&!koSeq){
+        gs.phase='ko';
+        startKO(d.ko.loser,d.ko.winner);
+      }
+      // Special sync
+      if(d.sp&&!specialPhase){
+        gs.phase='special';
+        specialPhase={pk:d.sp.pk,ok:d.sp.ok,t:d.sp.t||0,damageDealt:d.sp.dd||false,plantX:d.sp.px||0,frozenOpp:null,oppHit:false,oppWiggle:0,holdStarted:d.sp.hs||false,holdT:d.sp.ht||0,catX:d.sp.cx,alfredInit:d.sp.ai||false,alfredX:d.sp.ax||-80,alfredPhase:d.sp.ap||'enter',alfredT:d.sp.at||0};
+      } else if(!d.sp&&specialPhase){
+        specialPhase=null;gs.phase='fight';
+      }
     });
   }
 }
-// pushInput solo cuando cambia el input — llamado desde event handlers
+
 let lastPushedInput='';
 function pushInput(){if(!inputRef||vsMode!=='online')return;set(inputRef,{...myInput});}
 function pushInputNow(){
@@ -726,7 +751,18 @@ function pushInputNow(){
   const s=JSON.stringify(myInput);
   if(s!==lastPushedInput){lastPushedInput=s;pushInput();}
 }
-function pushReconcile(){if(!reconcileRef||myRole!=='host')return;set(reconcileRef,{p1hp:gs.p1.hp,p1hp2:gs.p1.hp2,p2hp:gs.p2.hp,p2hp2:gs.p2.hp2,timer:Math.ceil(gs.timer)});}
+
+function pushState(){
+  if(vsMode!=='online'||myRole!=='host')return;
+  const stateRef=ref(db,`rooms/${roomCode}/gstate`);
+  const pack=(pk)=>{const p=gs[pk];return{x:Math.round(p.x),y:Math.round(p.y),vy:+p.vy.toFixed(2),hp:p.hp,hp2:p.hp2,sp:p.special,st:p.state,fr:p.frame,fa:p.facing,bl:p.blocking?1:0,gr:p.grounded?1:0,wi:p.wiggle||0};};
+  const d={p1:pack('p1'),p2:pack('p2'),ti:Math.ceil(gs.timer)};
+  if(specialPhase){d.sp={pk:specialPhase.pk,ok:specialPhase.ok,t:specialPhase.t,dd:specialPhase.damageDealt?1:0,px:Math.round(specialPhase.plantX||0),hs:specialPhase.holdStarted?1:0,ht:specialPhase.holdT||0,cx:specialPhase.catX,ai:specialPhase.alfredInit?1:0,ax:Math.round(specialPhase.alfredX||-80),ap:specialPhase.alfredPhase||'enter',at:specialPhase.alfredT||0};}
+  if(koSeq){d.ko={loser:koSeq.loser,winner:koSeq.winner};}
+  set(stateRef,d);
+}
+
+function pushReconcile(){}
 
 // ── TIMER ────────────────────────────────────────────────────────
 function startTimer(){
@@ -878,11 +914,19 @@ function launchFight(){
 
 function startCountdown(){
   gs.phase='countdown';countdown={n:3,t:0};
+  // Ambos corren el interval — guest lo usa solo para countdown y render KO
   if(window._gInt)clearInterval(window._gInt);
   window._gInt=setInterval(gameTick,TICK);
   let n=3;
   if(window._cdInt)clearInterval(window._cdInt);
-  window._cdInt=setInterval(()=>{n--;if(n<0){clearInterval(window._cdInt);window._cdInt=null;countdown=null;gs.phase='fight';startTimer();dbg('FIGHT!');return;}countdown={n,t:0};resumeAC();playTone(n===0?1047:660,'sine',0.15,0.4);},1000);
+  window._cdInt=setInterval(()=>{
+    n--;
+    if(n<0){clearInterval(window._cdInt);window._cdInt=null;countdown=null;gs.phase='fight';
+      // Solo el host arranca el timer
+      if(vsMode==='cpu'||myRole==='host')startTimer();
+      dbg('FIGHT!');return;}
+    countdown={n,t:0};resumeAC();playTone(n===0?1047:660,'sine',0.15,0.4);
+  },1000);
 }
 
 // ── START GAME ───────────────────────────────────────────────────
