@@ -1166,15 +1166,15 @@ function selectChar(idx){
 }
 
 $('btnFight').onclick=async function(){
-  if(!myCharChoice)return;
+  if(vsMode==='cpu'&&(!myCharChoice||!oppCharChoice))return;
+  if(vsMode!=='cpu'&&!myCharChoice)return;
   if(selAnimId){cancelAnimationFrame(selAnimId);selAnimId=null;}
   $('btnFight').disabled=true;
 
   let p1CharKey,p2CharKey;
 
   if(vsMode==='cpu'){
-    const p2Key=oppCharChoice||CHARS.find(c=>c.key!==myCharChoice).key;
-    p1CharKey=myCharChoice;p2CharKey=p2Key;
+    p1CharKey=myCharChoice;p2CharKey=oppCharChoice;
   } else if(myRole==='host'){
     const snap=await get(ref(db,`rooms/${roomCode}/guestChar`));
     const guestChar=snap.val()||CHARS.find(c=>c.key!==myCharChoice).key;
