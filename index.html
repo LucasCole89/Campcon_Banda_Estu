@@ -140,8 +140,11 @@ canvas{display:block;touch-action:none;}
     <div class="subPanelMulti" id="subMulti" style="display:none;">
       <h3>🌐 MULTIJUGADOR</h3>
       <button class="btnMain btnCreate" id="btnCreate">➕ CREAR SALA</button>
-      <span class="salasLabel">SALAS DISPONIBLES</span>
-      <div id="salasList"><p class="noSalas">Cargando...</p></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+        <span class="salasLabel">SALAS DISPONIBLES</span>
+        <button onclick="startWatchSalas()" style="font-size:9px;background:rgba(255,255,255,0.1);color:#aaa;border:none;border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'Arial Black',sans-serif;">↺ actualizar</button>
+      </div>
+      <div id="salasList"><p class="noSalas">Abrí ONLINE para cargar</p></div>
     </div>
   </div>
   <p id="errMsg" style="position:absolute;bottom:8px;left:0;right:0;text-align:center;"></p>
@@ -295,25 +298,41 @@ $('cardMulti').onclick=()=>{
 let salasListener=null;
 function startWatchSalas(){
   stopWatchSalas();
+  const list=$('salasList');
+  if(list)list.innerHTML='<p class="noSalas">Buscando salas...</p>';
+  dbg('watchSalas: iniciando, uid='+currentUser?.uid);
+
+  // test de conectividad primero
+  get(ref(db,'rooms')).then(snap=>{
+    dbg('Firebase read OK, rooms='+(snap.exists()?Object.keys(snap.val()||{}).length:0));
+  }).catch(e=>{
+    dbg('Firebase ERROR: '+e.message);
+    if(list)list.innerHTML='<p class="noSalas">Error Firebase: '+e.code+'</p>';
+  });
+
   const roomsRef=ref(db,'rooms');
   salasListener=onValue(roomsRef,snap=>{
-    const list=$('salasList');if(!list)return;
+    const list2=$('salasList');if(!list2)return;
     const d=snap.val();
-    if(!d){list.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
+    dbg('salas snap: '+(d?Object.keys(d).length+' rooms':'null'));
+    if(!d){list2.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
     const uid=currentUser?.uid;
     const now=Date.now();
-    const ab=Object.entries(d).filter(([k,v])=>
+    const all=Object.entries(d);
+    const ab=all.filter(([k,v])=>
       v&&v.status==='waiting'&&v.host&&v.host!==uid&&(!v.createdAt||now-v.createdAt<600000)
     );
-    if(!ab.length){list.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
-    list.innerHTML=ab.map(([code,v])=>`
+    dbg('salas disponibles: '+ab.length+'/'+all.length);
+    if(!ab.length){list2.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
+    list2.innerHTML=ab.map(([code,v])=>`
       <div class="salaItem">
         <span>🎮 <strong>${v.hostName||'Alguien'}</strong></span>
         <button class="btnUnirse" onclick="window.joinSala('${code}')">UNIRSE</button>
       </div>`).join('');
-  },(e)=>{
-    console.error('watchSalas error:',e);
-    const list=$('salasList');if(list)list.innerHTML='<p class="noSalas">Error al cargar salas</p>';
+  },e=>{
+    dbg('onValue ERROR: '+e.message+' code:'+e.code);
+    const list2=$('salasList');
+    if(list2)list2.innerHTML='<p class="noSalas">Sin permiso — revisá Firebase Rules</p>';
   });
 }
 function stopWatchSalas(){
@@ -375,7 +394,11 @@ $('btnJoin').onclick=async()=>{
   }catch(e){err('Error: '+e.message);console.error(e);}
 };
 
-$('btnCPU').onclick=()=>{myRole='host';vsMode='cpu';roomCode=null;roomRef=null;startGame();};
+$('btnCPU').onclick=()=>{
+  dbg('btnCPU click');
+  myRole='host';vsMode='cpu';roomCode=null;roomRef=null;
+  startGame();
+};
 $('btnCancel').onclick=async()=>{
   if(roomRef)await remove(roomRef);
   roomRef=null;roomCode=null;myRole=null;vsMode=null;showLobby();
@@ -1086,24 +1109,28 @@ function startCountdown(){
 
 // ── START GAME ───────────────────────────────────────────────────
 async function startGame(){
-  if(vsMode==='cpu'){
-    // CPU: ir directo a selección sin pasar por waiting
-    show('selectScreen');
-    $('selMsg').textContent='Cargando personajes...';
+  dbg('startGame vsMode='+vsMode+' role='+myRole);
+  try{
+    if(vsMode==='cpu'){
+      show('selectScreen');
+      $('selMsg').textContent='Cargando...';
+      await loadSprites();
+      dbg('sprites OK, mostrando select');
+      myKey='p1';oppKey='p2';
+      showSelectScreen();
+      return;
+    }
+    show('waitingScreen');
+    $('displayCode').style.display='block';$('btnCancel').style.display='block';
     await loadSprites();
-    myKey='p1';oppKey='p2';
-    dbg('CPU listo');
+    myKey=myRole==='host'?'p1':'p2';
+    oppKey=myRole==='host'?'p2':'p1';
+    dbg('Online listo. role:'+myRole);
     showSelectScreen();
-    return;
+  }catch(e){
+    dbg('ERROR startGame: '+e.message);
+    console.error(e);
   }
-  // Online
-  show('waitingScreen');
-  $('displayCode').style.display='block';$('btnCancel').style.display='block';
-  await loadSprites();
-  myKey=myRole==='host'?'p1':'p2';
-  oppKey=myRole==='host'?'p2':'p1';
-  dbg('Online listo. role:'+myRole);
-  showSelectScreen();
 }
 
 // ── WIN BUTTONS ──────────────────────────────────────────────────
