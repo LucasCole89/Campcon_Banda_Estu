@@ -381,6 +381,8 @@ $('btnCreate').onclick=async()=>{
     myRole='host';vsMode='online';
     $('displayCode').textContent=roomCode;
     $('waitMsg').textContent='Esperando al rival...';
+    $('displayCode').style.display='block';
+    $('btnCancel').style.display='block';
     show('waitingScreen');
     // watch for guest joining
     const unsub=onValue(roomRef,snap=>{
@@ -417,7 +419,10 @@ $('btnCancel').onclick=async()=>{
   roomRef=null;roomCode=null;myRole=null;vsMode=null;showLobby();
 };
 
-// ── CHARS & STAGES ───────────────────────────────────────────────
+// ── SPRITES ──────────────────────────────────────────────────────
+// Declarar ANTES de cualquier función que las use
+const SP={};
+var spritesLoaded=false; // var evita temporal dead zone
 const CHARS=[
   {key:'machi',name:'MACHI',specialName:'CHAMPAGNE\nSUPERNOVA',color:'#FFD700',
    paths:{idle:['Machi/Machi_Idle_01.png','Machi/Machi_Idle_02.png','Machi/Machi_Idle_03.png','Machi/Machi_Idle_04.png','Machi/Machi_Idle_05.png'],walk:['Machi/Machi_Caminata_01.png','Machi/Machi_Caminata_02.png','Machi/Machi_Caminata_03.png','Machi/Machi_Caminata_04.png'],jump:['Machi/Machi_Salto_01.png','Machi/Machi_Salto_02.png','Machi/Machi_Salto_03.png','Machi/Machi_Salto_04.png'],attack:['Machi/Machi_Pu%C3%B1o_Basico_01.png','Machi/Machi_Pu%C3%B1o_Basico_02.png','Machi/Machi_Pu%C3%B1o_Basico_03.png','Machi/Machi_Pu%C3%B1o_Basico_04.png'],special:['Machi/Machi_Ataque_Especial_01.png','Machi/Machi_Ataque_Especial_02.png','Machi/Machi_Ataque_Especial_03.png','Machi/Machi_Ataque_Especial_04.png','Machi/Machi_Ataque_Especial_05.png','Machi/Machi_Ataque_Especial_06.png','Machi/Machi_Ataque_Especial_07.png','Machi/Machi_Ataque_Especial_08.png'],block:['Machi/Machi_Bloqueo_01.png','Machi/Machi_Bloqueo_02.png','Machi/Machi_Bloqueo_03.png'],hurt:['Machi/Machi_Hit_Reaction.png'],ko:['Machi/Machi_Vencido.png'],defeated:['Machi/Machi_Vencido.png'],celeb:['Machi/Machi_Festejo_01.png','Machi/Machi_Festejo_02.png','Machi/Machi_Festejo_03.png','Machi/Machi_Festejo_04.png'],jumpKick:['Machi/Machi_Jump_Kick.png'],jumpPunch:['Machi/Machi_Jump_Punch.png']}},
@@ -434,8 +439,6 @@ const STAGES=[
   {key:'casabrava',name:'CASA BRAVA',file:'Escenario_00_Casa_Brava.jpeg'},
 ];
 
-const SP={};
-let spritesLoaded=false;
 async function loadSprites(){
   if(spritesLoaded)return;
   function removeChroma(img){
@@ -988,18 +991,18 @@ function showSelectScreen(){
 }
 function selectChar(idx){
   if(vsMode==='cpu'){
-    if(selPhase==='player'){
-      if(myCharChoice)return;myCharChoice=CHARS[idx].key;
-      $('selCard'+idx).classList.add('sel-p1');
-      $('selMsg').textContent='Ahora elegí el RIVAL 👇';selPhase='opponent';
-      CHARS.forEach((_,i)=>{const c=$('selCard'+i);if(c){c.style.opacity='1';c.style.pointerEvents='auto';}});
-    } else if(selPhase==='opponent'){
-      if(oppCharChoice)return;oppCharChoice=CHARS[idx].key;
-      $('selCard'+idx).classList.add('sel-p2');
-      CHARS.forEach((_,i)=>{const c=$('selCard'+i);if(!c)return;c.style.pointerEvents='none';if(!c.classList.contains('sel-p1')&&!c.classList.contains('sel-p2'))c.style.opacity='0.4';});
-      $('selMsg').textContent=`${CHARS.find(c=>c.key===myCharChoice)?.name} vs ${CHARS[idx].name}`;
-      $('btnFight').style.display='block';$('btnFight').disabled=false;
-    }
+    // CPU: un solo paso — elegís tu personaje, CPU elige al azar
+    if(myCharChoice)return;
+    myCharChoice=CHARS[idx].key;
+    CHARS.forEach((_,i)=>{const c=$('selCard'+i);if(!c)return;
+      c.classList.remove('sel-p1','sel-p2');
+      if(i===idx)c.classList.add('sel-p1');
+      else{c.style.opacity='0.4';c.style.pointerEvents='none';}});
+    // CPU elige un personaje diferente al azar
+    const others=CHARS.filter(c=>c.key!==myCharChoice);
+    oppCharChoice=others[Math.floor(Math.random()*others.length)].key;
+    $('selMsg').textContent='VS '+CHARS.find(c=>c.key===oppCharChoice)?.name+' (CPU)';
+    $('btnFight').style.display='block';$('btnFight').disabled=false;
     return;
   }
   if(myCharChoice)return;myCharChoice=CHARS[idx].key;
