@@ -152,7 +152,7 @@ function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textCon
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
 const W=900,H=500,FLOOR=H-100,GR=0.75,SPMAX=100,TICK=33;
 const BASE_FH=248,FW=80;
-const CHAR_SCALE={machi:1.1,mauron:1.0,yiyo:1.0,mario:0.9};
+const CHAR_SCALE={machi:1.1,mauron:1.0,yiyo:1.0,mario:1.1};
 function getFH(charKey){return Math.round(BASE_FH*(CHAR_SCALE[charKey]||1));}
 function pkFH(pk){return getFH(pk==='p1'?SP._p1def?.key:SP._p2def?.key);}
 
@@ -276,9 +276,9 @@ const CHARS=[
    paths:{idle:['Machi/Machi_Idle_01.png','Machi/Machi_Idle_02.png','Machi/Machi_Idle_03.png','Machi/Machi_Idle_04.png','Machi/Machi_Idle_05.png'],walk:['Machi/Machi_Caminata_01.png','Machi/Machi_Caminata_02.png','Machi/Machi_Caminata_03.png','Machi/Machi_Caminata_04.png'],jump:['Machi/Machi_Salto_01.png','Machi/Machi_Salto_02.png','Machi/Machi_Salto_03.png','Machi/Machi_Salto_04.png'],attack:['Machi/Machi_Pu%C3%B1o_Basico_01.png','Machi/Machi_Pu%C3%B1o_Basico_02.png','Machi/Machi_Pu%C3%B1o_Basico_03.png','Machi/Machi_Pu%C3%B1o_Basico_04.png'],special:['Machi/Machi_Ataque_Especial_01.png','Machi/Machi_Ataque_Especial_02.png','Machi/Machi_Ataque_Especial_03.png','Machi/Machi_Ataque_Especial_04.png','Machi/Machi_Ataque_Especial_05.png','Machi/Machi_Ataque_Especial_06.png','Machi/Machi_Ataque_Especial_07.png','Machi/Machi_Ataque_Especial_08.png'],block:['Machi/Machi_Bloqueo_01.png','Machi/Machi_Bloqueo_02.png','Machi/Machi_Bloqueo_03.png'],hurt:['Machi/Machi_Hit_Reaction.png'],ko:['Machi/Machi_Vencido.png'],defeated:['Machi/Machi_Vencido.png'],celeb:['Machi/Machi_Festejo_01.png','Machi/Machi_Festejo_02.png','Machi/Machi_Festejo_03.png','Machi/Machi_Festejo_04.png'],jumpKick:['Machi/Machi_Jump_Kick.png'],jumpPunch:['Machi/Machi_Jump_Punch.png']}},
   {key:'mauron',name:'MAURON',specialName:'ABSOLUT\nPLANTS',color:'#00FF7F',
    paths:{idle:['Mauron/Mauron_Idle_01.png','Mauron/Mauron_Idle_02.png','Mauron/Mauron_Idle_03.png','Mauron/Mauron_Idle_04.png','Mauron/Mauron_Idle_05.png'],walk:['Mauron/Mauron_Walk_01.png','Mauron/Mauron_Walk_02.png','Mauron/Mauron_Walk_03.png','Mauron/Mauron_Walk_04.png'],jump:['Mauron/Mauron_Jump_01.png','Mauron/Mauron_Jump_02.png','Mauron/Mauron_Jump_03.png','Mauron/Mauron_Jump_04_aterrizaje.png'],attack:['Mauron/Mauron_Punch_01.png'],special:['Mauron/Mauron_Special_Attack_01.png','Mauron/Mauron_Special_Attack_02.png','Mauron/Mauron_Special_Attack_03.png','Mauron/Mauron_Special_Attack_04.png'],plants:['Mauron/Mauron_Special_Attack_05_Modulo_Plantas.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_01.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_02.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_03.png','Mauron/Mauron_Special_Attack_05_Modulo_Plantas_04.png'],block:['Mauron/Mauron_Block_01.png'],hurt:['Mauron/Mauron_Hit_against_01.png'],ko:['Mauron/Mauron_defeated_01.png'],defeated:['Mauron/Mauron_Defeated_en_piso_02.png'],celeb:['Mauron/Mauron_Festejo_01.png','Mauron/Mauron_Festejo_02.png','Mauron/Mauron_Festejo_03.png','Mauron/Mauron_Festejo_04.png'],jumpKick:['Mauron/Mauron_Kick_Jump.png'],jumpPunch:['Mauron/Mauron_Punch_Jump.png']}},
-  {key:'yiyo',name:'YIYO',specialName:'MIAU\nATTACK',color:'#FF88FF',
+  {key:'yiyo',name:'YIYO',specialName:'CAT\nWARRIORS',color:'#FF88FF',
    paths:{idle:['Yiyo/Yiyo_Idle_01.png','Yiyo/Yiyo_Idle_02.png','Yiyo/Yiyo_Idle_03.png'],walk:['Yiyo/Yiyo_Walk_01.png','Yiyo/Yiyo_Walk_02.png','Yiyo/Yiyo_Walk_03.png','Yiyo/Yiyo_Walk_04.png'],jump:['Yiyo/Yiyo_Jump_01.png','Yiyo/Yiyo_Jump_02.png','Yiyo/Yiyo_Jump_03.png','Yiyo/Yiyo_Jump_04.png'],attack:['Yiyo/Yiyo_Punch_01.png'],special:['Yiyo/Yiyo_Special_Attack_01.png','Yiyo/Yiyo_Special_Attack_02.png','Yiyo/Yiyo_Special_Attack_03.png'],specialModule:['Yiyo/Yiyo_Special_Attack_04_Modulo_Gatos.png','Yiyo/Yiyo_Special_Attack_05_Modulo_Gatos.png','Yiyo/Yiyo_Special_Attack_06_Modulo_Gatos.png'],block:['Yiyo/Yiyo_Block.png'],hurt:['Yiyo/Yiyo_Hit.png'],ko:['Yiyo/Yiyo_Vencido_01.png'],defeated:['Yiyo/Yiyo_Vencido_02.png'],celeb:['Yiyo/Yiyo_Festejo_01.png','Yiyo/Yiyo_Festejo_02.png','Yiyo/Yiyo_Festejo_03.png','Yiyo/Yiyo_Festejo_04.png'],jumpKick:['Yiyo/Yiyo_Jump_Kick.png'],jumpPunch:['Yiyo/Yiyo_Jump_Punch.png']}},
-  {key:'mario',name:'MARIO',specialName:'ALFRED AL\nRESCATE',color:'#FF6600',
+  {key:'mario',name:'MARIO',specialName:'ALFRED\nDEL ESTE',color:'#FF6600',
    paths:{idle:['Mario/Mario_Idle_01.png','Mario/Mario_Idle_02.png','Mario/Mario_Idle_03.png'],walk:['Mario/Mario_Walk_01.png','Mario/Mario_Walk_02.png','Mario/Mario_Walk_03.png'],jump:['Mario/Mario_Jump_01.png','Mario/Mario_Jump_02.png','Mario/Mario_Jump_03.png','Mario/Mario_Jump_04.png'],attack:['Mario/Mario_Punch_01.png','Mario/Mario_Punch_02.png'],special:['Mario/Mario_Special_Attack_01.png','Mario/Mario_Special_Attack_02.png','Mario/Mario_Special_Attack_03.png'],specialModule:['Mario/Mario_Special_Attack_04_Modulo_Alfred.png','Mario/Mario_Special_Attack_05_Modulo_Alfred.png','Mario/Mario_Special_Attack_06_Modulo_Alfred.png','Mario/Mario_Special_Attack_07_Modulo_Alfred.png'],block:['Mario/Mario_Block.png'],hurt:['Mario/Mario_Hit.png'],ko:['Mario/Mario_Knockdown_01.png'],defeated:['Mario/Mario_Knockdown_02.png'],celeb:['Mario/Mario_Festejo_01.png','Mario/Mario_Festejo_02.png','Mario/Mario_Festejo_03.png','Mario/Mario_Festejo_04.png'],jumpKick:['Mario/Mario_Jump_Kick.png'],jumpPunch:['Mario/Mario_Jump_Punch.png']}}
 ];
 const SP={};
@@ -511,29 +511,39 @@ function drawSpecial(){
 
   } else if(launcherKey==='yiyo'){
     const spF=spSP?.special||[];const invocDur=spF.length*10;
-    if(s.t<invocDur){
-      const fi=Math.min(Math.floor(s.t/10),spF.length-1);const sf=spF[fi];
-      if(sf){const dw=sf.width*(fh/sf.height);ctx.save();if(p.facing<0){ctx.translate(p.x+dw/2,p.y-fh);ctx.scale(-1,1);}else ctx.translate(p.x-dw/2,p.y-fh);ctx.drawImage(sf,0,0,dw,fh);ctx.restore();}
-    } else {
+    // dibujar Yiyo siempre — invocación o pose final
+    const yiyoFi=s.t<invocDur?Math.min(Math.floor(s.t/10),spF.length-1):spF.length-1;
+    const yiyoSf=spF[yiyoFi];
+    if(yiyoSf){const dw=yiyoSf.width*(fh/yiyoSf.height);ctx.save();
+      if(p.facing<0){ctx.translate(p.x+dw/2,p.y-fh);ctx.scale(-1,1);}
+      else ctx.translate(p.x-dw/2,p.y-fh);
+      ctx.drawImage(yiyoSf,0,0,dw,fh);ctx.restore();}
+    // fase 2: gatos
+    if(s.t>=invocDur){
       if(s.catX===undefined){s.catX=-80;s.catFrameT=0;s.catFi=0;}
       s.catX+=5;s.catFrameT++;
       if(s.catFrameT>=60){s.catFrameT=0;s.catFi=(s.catFi+1)%3;}
       const cats=spSP?.specialModule||[];const cf=cats[s.catFi];
-      if(cf){const ch=fh*0.75,cw=cf.width*(ch/cf.height);ctx.save();ctx.translate(s.catX,FLOOR);ctx.drawImage(cf,-cw/2,-ch,cw,ch);ctx.restore();}
+      if(cf){const ch=fh*0.975,cw=cf.width*(ch/cf.height);ctx.save();ctx.translate(s.catX,FLOOR);ctx.drawImage(cf,-cw/2,-ch,cw,ch);ctx.restore();}
       if(!s.damageDealt&&Math.abs(s.catX-frozenOpp.x)<FW*1.4){s.damageDealt=true;applySpecialDamage(ok,pk,s);}
       if(s.catX>W+100)s.holdStarted=true;
     }
 
   } else if(launcherKey==='mario'){
     const spF=spSP?.special||[];const invocDur=spF.length*10;
-    if(s.t<invocDur){
-      const fi=Math.min(Math.floor(s.t/10),spF.length-1);const sf=spF[fi];
-      if(sf){const dw=sf.width*(fh/sf.height);ctx.save();if(p.facing<0){ctx.translate(p.x+dw/2,p.y-fh);ctx.scale(-1,1);}else ctx.translate(p.x-dw/2,p.y-fh);ctx.drawImage(sf,0,0,dw,fh);ctx.restore();}
-    } else {
+    // dibujar Mario siempre — invocación o pose final
+    const marioFi=s.t<invocDur?Math.min(Math.floor(s.t/10),spF.length-1):spF.length-1;
+    const marioSf=spF[marioFi];
+    if(marioSf){const dw=marioSf.width*(fh/marioSf.height);ctx.save();
+      if(p.facing<0){ctx.translate(p.x+dw/2,p.y-fh);ctx.scale(-1,1);}
+      else ctx.translate(p.x-dw/2,p.y-fh);
+      ctx.drawImage(marioSf,0,0,dw,fh);ctx.restore();}
+    // fase 2: Alfred
+    if(s.t>=invocDur){
       if(!s.alfredInit){s.alfredInit=true;s.alfredX=-80;s.alfredPhase='enter';s.alfredT=0;}
       const alfred=spSP?.specialModule||[];const ah=fh*0.95;
       if(s.alfredPhase==='enter'){
-        s.alfredX+=6;const af=alfred[0];
+        s.alfredX+=12;const af=alfred[0];
         if(af){const aw=af.width*(ah/af.height);ctx.save();ctx.translate(s.alfredX,FLOOR);ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}
         if(s.alfredX>=frozenOpp.x-FW*0.8){s.alfredPhase='punch05';s.alfredT=0;}
       } else if(s.alfredPhase==='punch05'){
@@ -545,7 +555,7 @@ function drawSpecial(){
         if(af){const aw=af.width*(ah/af.height);ctx.save();ctx.translate(s.alfredX,FLOOR);ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}
         if(s.alfredT>=50){s.alfredPhase='exit';s.alfredT=0;}
       } else if(s.alfredPhase==='exit'){
-        s.alfredX-=6;const af=alfred[3];
+        s.alfredX-=12;const af=alfred[3];
         if(af){const aw=af.width*(ah/af.height);ctx.save();ctx.translate(s.alfredX,FLOOR);ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}
         if(s.alfredX<-100)s.holdStarted=true;
       }
