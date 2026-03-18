@@ -1136,8 +1136,16 @@ async function startGame(){
       showSelectScreen();
       return;
     }
+    // Online
     show('waitingScreen');
-    $('displayCode').style.display='block';$('btnCancel').style.display='block';
+    if(myRole==='host'){
+      $('displayCode').textContent=roomCode;
+      $('displayCode').style.display='block';
+    } else {
+      $('displayCode').style.display='none';
+      $('waitMsg').textContent='Conectando...';
+    }
+    $('btnCancel').style.display='block';
     await loadSprites();
     myKey=myRole==='host'?'p1':'p2';
     oppKey=myRole==='host'?'p2':'p1';
