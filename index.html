@@ -1174,7 +1174,7 @@ $('btnFight').onclick=async function(){
   let p1CharKey,p2CharKey;
 
   if(vsMode==='cpu'){
-    p1CharKey=myCharChoice;p2CharKey=oppCharChoice;
+    p1CharKey=myCharChoice||'machi';p2CharKey=oppCharChoice||'mauron';
   } else if(myRole==='host'){
     const snap=await get(ref(db,`rooms/${roomCode}/guestChar`));
     const guestChar=snap.val()||CHARS.find(c=>c.key!==myCharChoice).key;
@@ -1188,16 +1188,15 @@ $('btnFight').onclick=async function(){
   }
 
   // Asignar _p1/_p2 según rol
-  if(myRole==='host'||vsMode==='cpu'){
-    SP._p1=SP[p1CharKey];SP._p1def=CHARS.find(c=>c.key===p1CharKey);
-    SP._p2=SP[p2CharKey];SP._p2def=CHARS.find(c=>c.key===p2CharKey);
-  } else {
-    // guest: yo soy p2
-    SP._p1=SP[p2CharKey];SP._p1def=CHARS.find(c=>c.key===p2CharKey);
-    SP._p2=SP[p1CharKey];SP._p2def=CHARS.find(c=>c.key===p1CharKey);
+  SP._p1=SP[p1CharKey];SP._p1def=CHARS.find(c=>c.key===p1CharKey);
+  SP._p2=SP[p2CharKey];SP._p2def=CHARS.find(c=>c.key===p2CharKey);
+  if(myRole==='guest'){
+    // guest: yo soy p2, invertir
+    [SP._p1,SP._p2]=[SP._p2,SP._p1];
+    [SP._p1def,SP._p2def]=[SP._p2def,SP._p1def];
   }
-
-  dbg('p1:'+SP._p1def?.name+' p2:'+SP._p2def?.name+' role:'+myRole);
+  dbg('LANZANDO: p1='+SP._p1def?.name+' p2='+SP._p2def?.name+' role:'+myRole+' spritesOK:'+(!!SP._p1&&!!SP._p2));
+  if(!SP._p1||!SP._p2){dbg('ERROR: sprites no cargados');$('btnFight').disabled=false;return;}
   launchFight();
 };
 
