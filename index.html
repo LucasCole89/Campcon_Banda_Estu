@@ -92,7 +92,11 @@ canvas{display:block;touch-action:none;}
 <div id="rotateMsg"><div class="icon">📱</div><p>Rotá el teléfono<br>para jugar 🕹️</p></div>
 <div id="dbg"></div>
 
-<div class="screen" id="loginScreen">
+<div class="screen" id="splashScreen" style="background:#000;cursor:pointer;padding:0;">
+  <img id="splashImg" src="" alt="" style="width:100%;height:100%;object-fit:contain;display:block;">
+</div>
+
+<div class="screen hidden" id="loginScreen">
   <div class="title-wrap">
     <span class="title-line1">💥 ESTU'S FIGHTERS</span>
     <span class="title-vs">VS</span>
@@ -170,7 +174,7 @@ function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textCon
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
 const W=900,H=500,FLOOR=H-100,GR=0.75,SPMAX=100,TICK=33;
 const BASE_FH=248,FW=80;
-const CHAR_SCALE={machi:1.1,mauron:1.0,yiyo:1.0,mario:1.0};
+const CHAR_SCALE={machi:1.1,mauron:1.0,yiyo:1.0,mario:0.95};
 function getFH(key){return Math.round(BASE_FH*(CHAR_SCALE[key]||1));}
 function pkFH(pk){return getFH(pk==='p1'?SP._p1def?.key:SP._p2def?.key);}
 
@@ -219,6 +223,19 @@ function startMusic(){
   }tick();
 }
 function stopMusic(){if(musicNode){clearTimeout(musicNode);musicNode=null;}}
+
+// ── SPLASH ───────────────────────────────────────────────────────
+(function(){
+  const img=$('splashImg');
+  img.src=BASE+'Placa_Inicio.jpeg';
+  img.onerror=()=>show('loginScreen'); // si no carga, saltar directo
+  // tap o click → login
+  $('splashScreen').addEventListener('click',()=>show('loginScreen'),{once:true});
+  // auto-avanzar a los 4 segundos
+  setTimeout(()=>{
+    if(!$('splashScreen').classList.contains('hidden'))show('loginScreen');
+  },4000);
+})();
 
 // ── AUTH ─────────────────────────────────────────────────────────
 let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null;
@@ -558,12 +575,12 @@ function tickSpecialNoFreeze(){
       if(s.alfredPhase==='enter'){
         s.alfredX+=18; // double speed
         if(s.alfredX>=gs[ok].x-FW*0.8){s.alfredPhase='punch05';s.alfredT=0;}
-      } else if(s.alfredPhase==='punch05'){
+      } else       if(s.alfredPhase==='punch05'){
         s.alfredT++;
-        if(s.alfredT>=18){s.alfredPhase='punch06';s.alfredT=0;
+        if(s.alfredT>=6){s.alfredPhase='punch06';s.alfredT=0; // triple speed: 18→6
           if(!s.damageDealt){s.damageDealt=true;applySpecialDamage(ok,pk,null);}}
       } else if(s.alfredPhase==='punch06'){
-        s.alfredT++;if(s.alfredT>=50){s.alfredPhase='exit';s.alfredT=0;}
+        s.alfredT++;if(s.alfredT>=17){s.alfredPhase='exit';s.alfredT=0;} // triple speed: 50→17
       } else if(s.alfredPhase==='exit'){
         s.alfredX-=18; // double speed
         if(s.alfredX<-100)s.holdStarted=true;
@@ -850,8 +867,11 @@ function renderLoop(){
     drawSpecialFreeze();
   } else {
     drawBg();
-    if(gs.p1.x<gs.p2.x){drawFighter('p1');drawFighter('p2');}else{drawFighter('p2');drawFighter('p1');}
-    if(specialPhase&&!isFreeze)drawSpecialOverlay();
+    // si hay special no-freeze activo, no dibujar al lanzador con drawFighter (lo dibuja el overlay)
+    const spNoFreezePk=specialPhase&&(()=>{const lk=(specialPhase.pk==='p1'?SP._p1def:SP._p2def)?.key;return(lk==='yiyo'||lk==='mario')?specialPhase.pk:null;})();
+    const draw=(pk)=>{if(pk!==spNoFreezePk)drawFighter(pk);};
+    if(gs.p1.x<gs.p2.x){draw('p1');draw('p2');}else{draw('p2');draw('p1');}
+    if(specialPhase&&spNoFreezePk)drawSpecialOverlay();
     if(koSeq&&koSeq.phase!=='done')drawKOOverlay();
   }
   drawHUD();drawControls();
