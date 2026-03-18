@@ -336,6 +336,7 @@ $('btnJoin').onclick=async()=>{
     const d=snap.val();
     if(d.status!=='waiting'){err('Sala ya en juego');return;}
     await update(roomRef,{guest:currentUser.uid,guestName:currentUser.displayName||'Guest',status:'ready'});
+    onDisconnect(roomRef).remove(); // cleanup si guest se desconecta
     myRole='guest';vsMode='online';
     startGame();
   }catch(e){err('Error: '+e.message);console.error(e);}
@@ -958,13 +959,18 @@ $('btnFight').onclick=async function(){
   else{const snap=await get(ref(db,`rooms/${roomCode}/hostChar`));p2Key=myCharChoice;p1Key=snap.val()||CHARS.find(c=>c.key!==myCharChoice).key;}
   SP._p1=SP[p1Key];SP._p1def=CHARS.find(c=>c.key===p1Key);
   SP._p2=SP[p2Key];SP._p2def=CHARS.find(c=>c.key===p2Key);
-  if(myRole==='guest'){[SP._p1,SP._p2]=[SP._p2,SP._p1];[SP._p1def,SP._p2def]=[SP._p2def,SP._p1def];}
-  dbg(`Chars: p1=${SP._p1def?.name} p2=${SP._p2def?.name}`);
+  // NO swap: host=p1 (izquierda), guest=p2 (derecha) — mismo layout para ambos
+  dbg(`Chars: p1=${SP._p1def?.name} p2=${SP._p2def?.name} | role=${myRole}`);
   if(!SP._p1||!SP._p2){dbg('ERROR sprites nulos');$('btnFight').disabled=false;return;}
   showStageScreen();
 };
 
 // ── STAGE SELECT ─────────────────────────────────────────────────
+function scheduleStart(startAt){
+  const delay=Math.max(200,startAt-Date.now());
+  $('stageMsg').textContent='¡Comenzando!';
+  setTimeout(launchFight,delay);
+}
 function buildStageGrid(){
   const grid=$('stageGrid');grid.innerHTML='';
   STAGES.forEach(st=>{
@@ -975,12 +981,26 @@ function buildStageGrid(){
   });
 }
 function showStageScreen(){
-  $('stageMsg').textContent=vsMode==='online'&&myRole==='guest'?'Esperando que el host elija el escenario...':'Elegí el escenario';
   buildStageGrid();show('stageScreen');
   if(vsMode==='online'&&myRole==='guest'){
+    $('stageMsg').textContent='Esperando que el host elija el escenario...';
     STAGES.forEach(st=>{const c=$('stageCard_'+st.key);if(c){c.style.opacity='0.35';c.style.pointerEvents='none';}});
+    // watch stage choice
     const stRef=ref(db,`rooms/${roomCode}/stage`);
-    onValue(stRef,snap=>{const stage=snap.val();if(!stage)return;off(stRef);SP.bg=SP.stages[stage]||SP.stages.estudiantil;launchFight();});
+    onValue(stRef,snap=>{
+      const stage=snap.val();if(!stage)return;off(stRef);
+      SP.bg=SP.stages[stage]||SP.stages.estudiantil;
+      STAGES.forEach(st2=>{const c=$('stageCard_'+st2.key);if(c)c.classList.remove('sel');});
+      const sc=$('stageCard_'+stage);if(sc){sc.classList.add('sel');sc.style.opacity='1';}
+      $('stageMsg').textContent='¡'+STAGES.find(s=>s.key===stage)?.name+'! Confirmando...';
+      // signal guest ready
+      update(roomRef,{guestStageReady:true});
+      // wait for host to set fightStartAt
+      const fsRef=ref(db,`rooms/${roomCode}/fightStartAt`);
+      onValue(fsRef,snap2=>{const t=snap2.val();if(!t)return;off(fsRef);scheduleStart(t);});
+    });
+  } else {
+    $('stageMsg').textContent='Elegí el escenario';
   }
 }
 function selectStage(key){
@@ -988,9 +1008,21 @@ function selectStage(key){
   SP.bg=SP.stages[key]||SP.stages.estudiantil;
   STAGES.forEach(st=>{const c=$('stageCard_'+st.key);if(c)c.classList.remove('sel');});
   const card=$('stageCard_'+key);if(card)card.classList.add('sel');
-  if(vsMode==='online'&&myRole==='host')update(roomRef,{stage:key});
-  $('stageMsg').textContent='¡'+STAGES.find(s=>s.key===key)?.name+'! Cargando...';
-  setTimeout(()=>launchFight(),300);
+  if(vsMode==='cpu'){
+    $('stageMsg').textContent='¡'+STAGES.find(s=>s.key===key)?.name+'!';
+    setTimeout(launchFight,300);return;
+  }
+  // online host: write stage, mark room as playing, wait for guest
+  update(roomRef,{stage:key,status:'playing'});
+  $('stageMsg').textContent='Esperando confirmación del rival...';
+  const grRef=ref(db,`rooms/${roomCode}/guestStageReady`);
+  onValue(grRef,snap=>{
+    if(snap.val()!==true)return;off(grRef);
+    // schedule simultaneous start 1.5s from now
+    const startAt=Date.now()+1500;
+    update(roomRef,{fightStartAt:startAt});
+    scheduleStart(startAt);
+  });
 }
 
 // ── LAUNCH FIGHT ─────────────────────────────────────────────────
@@ -1030,8 +1062,10 @@ async function startGame(){
 // ── WIN BUTTONS ──────────────────────────────────────────────────
 $('btnRevanche').onclick=async()=>{
   if(vsMode==='cpu'){startGame();return;}
-  if(myRole==='host'){await update(roomRef,{status:'ready',state:null,hostChar:null,guestChar:null,guestReady:false,hostReady:false,stage:null,reconcile:null});startGame();}
-  else{show('waitingScreen');$('waitMsg').textContent='Esperando revancha...';}
+  if(myRole==='host'){
+    await update(roomRef,{status:'waiting',state:null,hostChar:null,guestChar:null,guestReady:false,hostReady:false,stage:null,guestStageReady:false,fightStartAt:null});
+    startGame();
+  } else {show('waitingScreen');$('waitMsg').textContent='Esperando revancha...';}
 };
 $('btnLobbyBack').onclick=async()=>{
   if(window._gameInterval){clearInterval(window._gameInterval);window._gameInterval=null;}
