@@ -574,7 +574,7 @@ function drawSpecialOverlay(){
   const spSP=getSP(pk),fhPk=pkFH(pk),p=gs[pk],spF=spSP?.special||[];
   const fi=Math.min(Math.floor(s.t/10),spF.length-1),spr=spF[fi];
   if(spr){const dw=spr.width*(fhPk/spr.height);ctx.save();if(p.facing<0){ctx.translate(p.x+dw/2,p.y-fhPk);ctx.scale(-1,1);}else ctx.translate(p.x-dw/2,p.y-fhPk);ctx.drawImage(spr,0,0,dw,fhPk);ctx.restore();}
-  if(lKey==='yiyo'&&s.catX!==undefined){const cats=spSP?.specialModule||[],cf=cats[s.catFi||0];if(cf){const ch=fhPk*0.975,cw=cf.width*(ch/cf.height);ctx.save();ctx.translate(s.catX,FLOOR);ctx.drawImage(cf,-cw/2,-ch,cw,ch);ctx.restore();}}
+  if(lKey==='yiyo'&&typeof s.catX==='number'){const cats=spSP?.specialModule||[],cf=cats[s.catFi||0];if(cf){const ch=fhPk*0.975,cw=cf.width*(ch/cf.height);ctx.save();ctx.translate(s.catX,FLOOR);ctx.drawImage(cf,-cw/2,-ch,cw,ch);ctx.restore();}}
   else if(lKey==='mario'&&s.alfredInit){const alf=spSP?.specialModule||[],ai={enter:0,punch05:1,punch06:2,exit:3}[s.alfredPhase]||0,af=alf[ai];if(af){const ah=fhPk*0.95,aw=af.width*(ah/af.height);ctx.save();ctx.translate(s.alfredX,FLOOR);ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}}
 }
 
@@ -790,12 +790,17 @@ function pushState(){
   const pack=pk=>{const p=gs[pk];return{x:Math.round(p.x),y:Math.round(p.y),vy:+p.vy.toFixed(2),hp:p.hp,hp2:p.hp2,sp:p.special,st:p.state,fr:p.frame,fa:p.facing,bl:p.blocking?1:0,gr:p.grounded?1:0,wi:p.wiggle||0};};
   const d={p1:pack('p1'),p2:pack('p2'),ti:Math.ceil(gs.timer)};
   if(specialPhase){
+    const fo=specialPhase.frozenOpp;
     d.sp={pk:specialPhase.pk,ok:specialPhase.ok,t:specialPhase.t,
       dd:specialPhase.damageDealt?1:0,px:Math.round(specialPhase.plantX||0),
       hs:specialPhase.holdStarted?1:0,ht:specialPhase.holdT||0,
-      cx:specialPhase.catX,cfi:specialPhase.catFi||0,
-      ai:specialPhase.alfredInit?1:0,ax:Math.round(specialPhase.alfredX||-80),
-      ap:specialPhase.alfredPhase||'enter',at:specialPhase.alfredT||0};
+      cx:typeof specialPhase.catX==='number'?specialPhase.catX:null,
+      cfi:specialPhase.catFi||0,
+      ai:specialPhase.alfredInit?1:0,
+      ax:typeof specialPhase.alfredX==='number'?Math.round(specialPhase.alfredX):-80,
+      ap:specialPhase.alfredPhase||'enter',at:specialPhase.alfredT||0,
+      oh:specialPhase.oppHit?1:0,
+      fo:fo?{x:Math.round(fo.x),y:Math.round(fo.y),hp:fo.hp,st:fo.state,fr:fo.frame,fa:fo.facing}:null};
   }
   if(koSeq){d.ko={loser:koSeq.loser,winner:koSeq.winner};}
   set(stateRef,d);
