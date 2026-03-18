@@ -125,10 +125,6 @@ canvas{display:block;touch-action:none;}
     <h3>MULTIJUGADOR</h3>
     <button class="btnMain btnCreate" id="btnCreate">➕ CREAR SALA</button>
     <div id="salasList"></div>
-    <div id="joinForm">
-      <input id="roomCodeInput" maxlength="4" placeholder="CÓDIGO"/>
-      <button class="btnMain btnJoin" id="btnJoin">UNIRSE</button>
-    </div>
   </div>
   <p id="errMsg"></p>
   <button class="btnMain btnLogout" id="btnLogout">Cerrar sesión</button>
@@ -288,7 +284,7 @@ function startWatchSalas(){
     if(!ab.length){list.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
     list.innerHTML=ab.map(([code,v])=>`
       <div class="salaItem">
-        <span><strong>${v.hostName||'Alguien'}</strong> — <strong>${code}</strong></span>
+        <span>🎮 <strong>${v.hostName||'Alguien'}</strong></span>
         <button class="btnUnirse" onclick="window.joinSala('${code}')">UNIRSE</button>
       </div>`).join('');
   },(e)=>{console.error('watchSalas error:',e);});
@@ -967,8 +963,9 @@ $('btnFight').onclick=async function(){
 
 // ── STAGE SELECT ─────────────────────────────────────────────────
 function scheduleStart(startAt){
-  const delay=Math.max(200,startAt-Date.now());
-  $('stageMsg').textContent='¡Comenzando!';
+  const delay=Math.max(100,startAt-Date.now());
+  dbg('scheduleStart en '+delay+'ms');
+  $('stageMsg').textContent='¡Comenzando en '+(Math.round(delay/1000)||1)+'s...';
   setTimeout(launchFight,delay);
 }
 function buildStageGrid(){
@@ -982,47 +979,49 @@ function buildStageGrid(){
 }
 function showStageScreen(){
   buildStageGrid();show('stageScreen');
-  if(vsMode==='online'&&myRole==='guest'){
-    $('stageMsg').textContent='Esperando que el host elija el escenario...';
-    STAGES.forEach(st=>{const c=$('stageCard_'+st.key);if(c){c.style.opacity='0.35';c.style.pointerEvents='none';}});
-    // watch stage choice
-    const stRef=ref(db,`rooms/${roomCode}/stage`);
-    onValue(stRef,snap=>{
-      const stage=snap.val();if(!stage)return;off(stRef);
-      SP.bg=SP.stages[stage]||SP.stages.estudiantil;
-      STAGES.forEach(st2=>{const c=$('stageCard_'+st2.key);if(c)c.classList.remove('sel');});
-      const sc=$('stageCard_'+stage);if(sc){sc.classList.add('sel');sc.style.opacity='1';}
-      $('stageMsg').textContent='¡'+STAGES.find(s=>s.key===stage)?.name+'! Confirmando...';
-      // signal guest ready
-      update(roomRef,{guestStageReady:true});
-      // wait for host to set fightStartAt
-      const fsRef=ref(db,`rooms/${roomCode}/fightStartAt`);
-      onValue(fsRef,snap2=>{const t=snap2.val();if(!t)return;off(fsRef);scheduleStart(t);});
-    });
-  } else {
+  if(vsMode==='cpu'){
     $('stageMsg').textContent='Elegí el escenario';
+    return;
   }
+  // AMBOS (host y guest) escuchan fightStartAt
+  $('stageMsg').textContent=myRole==='guest'?'Esperando que el host elija el escenario...':'Elegí el escenario';
+  if(myRole==='guest'){
+    STAGES.forEach(st=>{const c=$('stageCard_'+st.key);if(c){c.style.opacity='0.35';c.style.pointerEvents='none';}});
+  }
+  // watch stage para mostrar selección al guest
+  const stRef=ref(db,`rooms/${roomCode}/stage`);
+  onValue(stRef,snap=>{
+    const stage=snap.val();if(!stage)return;
+    SP.bg=SP.stages[stage]||SP.stages.estudiantil;
+    STAGES.forEach(st2=>{const c=$('stageCard_'+st2.key);if(c){c.classList.remove('sel');c.style.opacity=myRole==='guest'?'0.35':'1';}});
+    const sc=$('stageCard_'+stage);if(sc){sc.classList.add('sel');sc.style.opacity='1';}
+    $('stageMsg').textContent='Escenario: '+STAGES.find(s=>s.key===stage)?.name+'...';
+  });
+  // AMBOS escuchan fightStartAt — así host y guest arrancan juntos
+  const fsRef=ref(db,`rooms/${roomCode}/fightStartAt`);
+  onValue(fsRef,snap=>{
+    const t=snap.val();if(!t)return;
+    off(fsRef);off(stRef);
+    scheduleStart(t);
+  });
 }
 function selectStage(key){
-  if(vsMode==='online'&&myRole==='guest')return;
-  SP.bg=SP.stages[key]||SP.stages.estudiantil;
-  STAGES.forEach(st=>{const c=$('stageCard_'+st.key);if(c)c.classList.remove('sel');});
-  const card=$('stageCard_'+key);if(card)card.classList.add('sel');
   if(vsMode==='cpu'){
+    SP.bg=SP.stages[key]||SP.stages.estudiantil;
+    STAGES.forEach(st=>{const c=$('stageCard_'+st.key);if(c)c.classList.remove('sel');});
+    const card=$('stageCard_'+key);if(card)card.classList.add('sel');
     $('stageMsg').textContent='¡'+STAGES.find(s=>s.key===key)?.name+'!';
     setTimeout(launchFight,300);return;
   }
-  // online host: write stage, mark room as playing, wait for guest
-  update(roomRef,{stage:key,status:'playing'});
-  $('stageMsg').textContent='Esperando confirmación del rival...';
-  const grRef=ref(db,`rooms/${roomCode}/guestStageReady`);
-  onValue(grRef,snap=>{
-    if(snap.val()!==true)return;off(grRef);
-    // schedule simultaneous start 1.5s from now
-    const startAt=Date.now()+1500;
-    update(roomRef,{fightStartAt:startAt});
-    scheduleStart(startAt);
-  });
+  if(myRole!=='host')return;
+  SP.bg=SP.stages[key]||SP.stages.estudiantil;
+  STAGES.forEach(st=>{const c=$('stageCard_'+st.key);if(c)c.classList.remove('sel');});
+  const card=$('stageCard_'+key);if(card)card.classList.add('sel');
+  $('stageMsg').textContent='Sincronizando...';
+  // host escribe escenario + timestamp de inicio con 2.5s de margen
+  const startAt=Date.now()+2500;
+  update(roomRef,{stage:key,status:'playing',fightStartAt:startAt});
+  // host también espera el mismo fightStartAt (ya lo va a recibir por el onValue de arriba)
 }
 
 // ── LAUNCH FIGHT ─────────────────────────────────────────────────
