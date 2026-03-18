@@ -170,6 +170,8 @@ function err(msg){$('errMsg').textContent=msg;setTimeout(()=>$('errMsg').textCon
 const BASE='https://lucascole89.github.io/Campcon_Banda_Estu/';
 const W=900,H=500,FLOOR=H-100,GR=0.75,SPMAX=100,TICK=33;
 const FH=248,FW=80;
+const CHAR_SCALE={'machi':1.1,'mauron':1.0,'yiyo':1.0,'mario':0.9};
+function charFH(pk){const def=pk==='p1'?SP._p1def:SP._p2def;return Math.round(FH*(CHAR_SCALE[def?.key]||1));}
 
 // ── AUDIO ─────────────────────────────────────────────────────────
 const AC=new(window.AudioContext||window.webkitAudioContext)();
@@ -474,9 +476,10 @@ function drawFighter(pk){
   const f=gs[pk];
   const frames=getFrames(pk);
   const img=frames[Math.min(f.frame,Math.max(0,frames.length-1))];
+  const fh=charFH(pk);
   const isMauronPunch=getSP(pk)===SP.mauron&&f.state==='attack'&&!f._airAtk;
   const ox=isMauronPunch?(f.facing>0?20:-20):0;
-  drawSpriteAt(img,f.x+ox,f.y,FH,f.facing,f.state==='hurt'?'rgba(255,0,0,0.5)':null,f.wiggle>0);
+  drawSpriteAt(img,f.x+ox,f.y,fh,f.facing,f.state==='hurt'?'rgba(255,0,0,0.5)':null,f.wiggle>0);
   if(f.blocking){
     const dw=img?(FH/img.height)*img.width:FW;
     ctx.save();ctx.globalAlpha=0.3;ctx.fillStyle='#4af';
@@ -647,61 +650,93 @@ function drawSpecial(){
       }
     }
 
-  // ── YIYO SPECIAL (módulo gatos) ──
+  // ── YIYO SPECIAL (gatos de izq a der, loop 04-05-06, hitean al pasar) ──
   } else if(launcherKey==='yiyo'){
+    // Fase 1: animación de invocación (special 01-03), dura spF.length*10 ticks
     const spF=spSP?.special||[];
-    const fi=Math.min(Math.floor(s.t/8),spF.length-1);
-    const sf=spF[fi];
-    if(sf){const dw=sf.width*(FH/sf.height);ctx.save();
-      if(p.facing<0){ctx.translate(p.x+dw/2,p.y-FH);ctx.scale(-1,1);}
-      else ctx.translate(p.x-dw/2,p.y-FH);
-      ctx.drawImage(sf,0,0,dw,FH);ctx.restore();}
-    if(fi>=spF.length-1){
+    const invocDur=spF.length*10;
+    if(s.t<invocDur){
+      const fi=Math.min(Math.floor(s.t/10),spF.length-1);
+      const sf=spF[fi];
+      if(sf){const dw=sf.width*(FH/sf.height);ctx.save();
+        if(p.facing<0){ctx.translate(p.x+dw/2,p.y-FH);ctx.scale(-1,1);}
+        else ctx.translate(p.x-dw/2,p.y-FH);
+        ctx.drawImage(sf,0,0,dw,FH);ctx.restore();}
+    } else {
+      // Fase 2: gatos moviéndose de izq a der
+      // inicializar posición del gato la primera vez
+      if(!s.catX){s.catX=-80;s.catFrameT=0;s.catFi=0;}
+      // avanzar de izquierda a derecha
+      s.catX+=5;
+      // animar loop entre frames 0,1,2 (sprites 04,05,06), 60 ticks c/u
+      s.catFrameT++;
+      if(s.catFrameT>=60){s.catFrameT=0;s.catFi=(s.catFi+1)%3;}
       const cats=spSP?.specialModule||[];
-      const ci=Math.min(Math.floor((s.t-spF.length*8)/5),cats.length-1);
-      if(ci>=0){
-        const cf=cats[ci];
-        if(cf){const ch=FH*0.7,cw=cf.width*(ch/cf.height);
-          const cx=s.plantX;
-          ctx.save();ctx.translate(cx,FLOOR);ctx.drawImage(cf,-cw/2,-ch,cw,ch);ctx.restore();}
-        const isLast=ci>=cats.length-1;
-        if(!s.holdStarted&&isLast){s.holdStarted=true;s.holdT=0;}
-        if(s.holdStarted)s.holdT++;
-        if(s.holdStarted&&s.holdT>=6&&!s.damageDealt){
-          s.damageDealt=true;
-          if(Math.abs(s.plantX-frozenOpp.x)<FW*1.5)applySpecialDamage(ok,pk,s);
-        }
+      const cf=cats[s.catFi];
+      if(cf){
+        const ch=FH*0.75,cw=cf.width*(ch/cf.height);
+        ctx.save();ctx.translate(s.catX,FLOOR);ctx.drawImage(cf,-cw/2,-ch,cw,ch);ctx.restore();
       }
+      // hit cuando el gato pasa cerca del oponente (solo una vez)
+      if(!s.damageDealt&&Math.abs(s.catX-frozenOpp.x)<FW*1.4){
+        s.damageDealt=true;
+        applySpecialDamage(ok,pk,s);
+      }
+      // terminar cuando el gato sale por el lado derecho
+      if(s.catX>W+100)s.holdStarted=true;
     }
 
-  // ── MARIO SPECIAL (módulo Alfred) ──
+  // ── MARIO SPECIAL (Alfred entra izq, golpea, se va izq) ──
   } else if(launcherKey==='mario'){
+    // Fase 1: animación mario invocando (special 01-03)
     const spF=spSP?.special||[];
-    const fi=Math.min(Math.floor(s.t/8),spF.length-1);
-    const sf=spF[fi];
-    if(sf){const dw=sf.width*(FH/sf.height);ctx.save();
-      if(p.facing<0){ctx.translate(p.x+dw/2,p.y-FH);ctx.scale(-1,1);}
-      else ctx.translate(p.x-dw/2,p.y-FH);
-      ctx.drawImage(sf,0,0,dw,FH);ctx.restore();}
-    if(fi>=spF.length-1){
+    const invocDur=spF.length*10;
+    if(s.t<invocDur){
+      const fi=Math.min(Math.floor(s.t/10),spF.length-1);
+      const sf=spF[fi];
+      if(sf){const dw=sf.width*(FH/sf.height);ctx.save();
+        if(p.facing<0){ctx.translate(p.x+dw/2,p.y-FH);ctx.scale(-1,1);}
+        else ctx.translate(p.x-dw/2,p.y-FH);
+        ctx.drawImage(sf,0,0,dw,FH);ctx.restore();}
+    } else {
+      // Fase 2: Alfred
+      if(!s.alfredInit){
+        s.alfredInit=true;
+        s.alfredX=-80;       // entra desde la izquierda
+        s.alfredPhase='enter'; // enter → punch04 → punch05 → hold06 → exit
+        s.alfredFi=0;        // índice en specialModule
+        s.alfredHoldT=0;
+      }
       const alfred=spSP?.specialModule||[];
-      const ai=Math.min(Math.floor((s.t-spF.length*8)/5),alfred.length-1);
-      if(ai>=0){
-        const af=alfred[ai];
-        if(af){const ah=FH*0.9,aw=af.width*(ah/af.height);
-          // Alfred aparece del lado opuesto al lanzador
-          const ax=p.facing>0?p.x+180:p.x-180;
-          ctx.save();ctx.translate(ax,FLOOR);
-          if(p.facing>0)ctx.scale(-1,1);
-          ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}
-        const isLast=ai>=alfred.length-1;
-        if(!s.holdStarted&&isLast){s.holdStarted=true;s.holdT=0;}
-        if(s.holdStarted)s.holdT++;
-        if(s.holdStarted&&s.holdT>=6&&!s.damageDealt){
-          s.damageDealt=true;
-          const ax=p.facing>0?p.x+180:p.x-180;
-          if(Math.abs(ax-frozenOpp.x)<FW*1.8)applySpecialDamage(ok,pk,s);
+      const ah=FH*0.95;
+
+      if(s.alfredPhase==='enter'){
+        s.alfredX+=6;
+        const af=alfred[0]; // sprite 04 mientras entra
+        if(af){const aw=af.width*(ah/af.height);ctx.save();ctx.translate(s.alfredX,FLOOR);ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}
+        // llegó a posición de golpe (cerca del oponente o a ~x del oponente)
+        if(s.alfredX>=frozenOpp.x-FW*0.8){s.alfredPhase='punch05';s.alfredT=0;}
+
+      } else if(s.alfredPhase==='punch05'){
+        s.alfredT++;
+        const af=alfred[1]; // sprite 05
+        if(af){const aw=af.width*(ah/af.height);ctx.save();ctx.translate(s.alfredX,FLOOR);ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}
+        if(s.alfredT>=18){
+          s.alfredPhase='punch06';s.alfredT=0;
+          if(!s.damageDealt){s.damageDealt=true;applySpecialDamage(ok,pk,s);}
         }
+
+      } else if(s.alfredPhase==='punch06'){
+        s.alfredT++;
+        const af=alfred[2]; // sprite 06 — se mantiene bastante
+        if(af){const aw=af.width*(ah/af.height);ctx.save();ctx.translate(s.alfredX,FLOOR);ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}
+        if(s.alfredT>=50){s.alfredPhase='exit';s.alfredT=0;}
+
+      } else if(s.alfredPhase==='exit'){
+        s.alfredX-=6; // se va hacia la izquierda
+        const af=alfred[3]; // sprite 07
+        if(af){const aw=af.width*(ah/af.height);ctx.save();ctx.translate(s.alfredX,FLOOR);ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}
+        if(s.alfredX<-100)s.holdStarted=true;
       }
     }
   }
@@ -772,11 +807,44 @@ function updateKOSeq(){
       else{currentRound++;roundBanner={text:'ROUND '+currentRound,t:0};koSeq=null;setTimeout(()=>{initRound();startTimer();},1500);}
     }
   } else if(s.phase==='celeb'){
-    s.t++;s.celebTimer++;
-    if(s.celebTimer>3){s.celebTimer=0;s.celebFrame++;}
-    const cf=getFrames(s.winner,'celeb');if(s.celebFrame>=cf.length)s.celebFrame=0;
-    gs[s.winner].frame=s.celebFrame;
-    if(s.t>180){s.phase='done';SFX.win();stopMusic();setTimeout(()=>{hideCanvas();$('winTxt').textContent=s.winnerName+' WINS!';show('winScreen');},500);}
+    s.t++;
+    // Lógica de celebración con timing diferenciado por frame
+    // frames 0 y 1 (01,02): 60 ticks c/u — se reproducen una sola vez
+    // frames 2 y 3 (03,04): ~35 ticks c/u — loop infinito
+    const winKey=SP._p1def?.key===SP._p1def?.key?SP[s.winner==='p1'?'_p1def':'_p2def']?.key:null;
+    const wdef=s.winner==='p1'?SP._p1def:SP._p2def;
+    const useLongIntro=wdef&&(wdef.key==='yiyo'||wdef.key==='mario');
+    const isMarioWin=wdef?.key==='mario';
+    const frameDur=f=>{
+      if(useLongIntro){
+        if(f<=1)return 60; // frames 01,02: 60 ticks
+        return 35;          // frames 03,04: 35 ticks en loop
+      }
+      return 3; // machi/mauron: animación rápida estándar
+    };
+    if(!s.celebFrameT)s.celebFrameT=0;
+    s.celebFrameT++;
+    const cf=getFrames(s.winner,'celeb');
+    const dur=frameDur(s.celebFrame);
+    if(s.celebFrameT>=dur){
+      s.celebFrameT=0;
+      if(useLongIntro){
+        if(s.celebFrame<1){
+          s.celebFrame++; // avanzar 01→02 una sola vez
+        } else if(s.celebFrame===1){
+          s.celebFrame=2; // pasar al loop
+        } else {
+          // loop entre frames 2 y 3
+          s.celebFrame=s.celebFrame===2?3:2;
+        }
+      } else {
+        s.celebFrame=(s.celebFrame+1)%cf.length;
+      }
+    }
+    if(s.celebFrame<cf.length)gs[s.winner].frame=s.celebFrame;
+    // Mario: vibración — sobreescribir wiggle para que tiemble siempre
+    if(isMarioWin)gs[s.winner].wiggle=2;
+    if(s.t>240){s.phase='done';SFX.win();stopMusic();setTimeout(()=>{hideCanvas();$('winTxt').textContent=s.winnerName+' WINS!';show('winScreen');},500);}
   }
 }
 
@@ -791,12 +859,12 @@ function drawKOOverlay(){
     const alpha=Math.min(1,s.t/30);
     const lines=s.winnerName.split('\n');
     ctx.save();ctx.globalAlpha=alpha;
-    ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,H*0.32,W,H*0.3);
+    ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(0,H*0.04,W,H*0.14);
     ctx.textAlign='center';ctx.shadowColor='#FF6600';ctx.shadowBlur=30;
     ctx.fillStyle='#FFD700';
     ctx.font='bold '+Math.floor(W*0.065)+'px Arial Black';
-    ctx.fillText(lines[0]+' WINS!',W/2,H*0.5);
-    if(lines[1]){ctx.shadowBlur=0;ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='bold '+Math.floor(W*0.025)+'px Arial';ctx.fillText(lines[1],W/2,H*0.58);}
+    ctx.fillText(lines[0]+' WINS!',W/2,H*0.13);
+    if(lines[1]){ctx.shadowBlur=0;ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='bold '+Math.floor(W*0.025)+'px Arial';ctx.fillText(lines[1],W/2,H*0.19);}
     ctx.restore();
   }
 }
@@ -1105,9 +1173,8 @@ $('btnFight').onclick=async function(){
   let p1CharKey,p2CharKey;
 
   if(vsMode==='cpu'){
-    const others=CHARS.filter(c=>c.key!==myCharChoice);
-    const oppKey2=others[Math.floor(Math.random()*others.length)].key;
-    p1CharKey=myCharChoice;p2CharKey=oppKey2;
+    const p2Key=oppCharChoice||CHARS.find(c=>c.key!==myCharChoice).key;
+    p1CharKey=myCharChoice;p2CharKey=p2Key;
   } else if(myRole==='host'){
     const snap=await get(ref(db,`rooms/${roomCode}/guestChar`));
     const guestChar=snap.val()||CHARS.find(c=>c.key!==myCharChoice).key;
