@@ -61,6 +61,28 @@ canvas{display:block;touch-action:none;}
 #rotateMsg p{color:#FFD700;font-size:18px;text-align:center;}
 @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 @media(orientation:portrait){#rotateMsg{display:flex;}}
+
+/* ── SELECT SCREEN ── */
+#selectScreen{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);gap:10px;}
+#selectScreen h2{font-size:clamp(14px,3.5vw,24px);color:#FFD700;text-shadow:2px 2px 0 #000;}
+#charGrid{display:flex;gap:14px;justify-content:center;align-items:flex-end;flex-wrap:wrap;}
+.charCard{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  background:rgba(255,255,255,0.05);border:3px solid transparent;
+  border-radius:12px;padding:8px 10px;cursor:pointer;
+  transition:border-color 0.2s,transform 0.1s,opacity 0.2s;
+  width:110px;
+}
+.charCard:hover{transform:scale(1.04);}
+.charCard.selected-p1{border-color:#FFD700;background:rgba(255,215,0,0.1);}
+.charCard.selected-p2{border-color:#00FF7F;background:rgba(0,255,127,0.1);}
+.charCard.disabled{opacity:0.35;pointer-events:none;}
+.charCard canvas{border-radius:6px;}
+.charCard .charName{font-size:10px;letter-spacing:2px;text-align:center;}
+.charCard .charSpecial{font-size:7px;color:#aaa;text-align:center;letter-spacing:1px;}
+#selMsg{color:#aaa;font-size:11px;text-align:center;min-height:16px;}
+#btnFight{display:none;margin-top:4px;}
+
 /* debug */
 #dbg{position:fixed;top:0;left:0;background:rgba(0,0,0,0.75);color:lime;font-size:10px;padding:3px 8px;z-index:9999;pointer-events:none;max-width:100vw;white-space:pre;}
 </style>
@@ -97,7 +119,7 @@ canvas{display:block;touch-action:none;}
   </div>
   <p id="errMsg"></p>
   <button class="btnMain btnLogout" id="btnLogout">Cerrar sesión</button>
-  <div style="position:absolute;bottom:6px;right:10px;font-size:9px;color:rgba(255,255,255,0.2);font-family:monospace;">v0.16</div>
+  <div style="position:absolute;bottom:6px;right:10px;font-size:9px;color:rgba(255,255,255,0.2);font-family:monospace;">v0.17</div>
 </div>
 
 <!-- WAITING -->
@@ -108,12 +130,12 @@ canvas{display:block;touch-action:none;}
   <button class="btnMain btnCancel" id="btnCancel">Cancelar</button>
 </div>
 
-<!-- CHAR SELECT -->
+<!-- CHAR SELECT — generado dinámicamente por JS -->
 <div class="screen hidden" id="selectScreen">
-  <h2 style="color:#FFD700;font-size:clamp(14px,3.5vw,24px);margin-bottom:8px;">⚡ ELEGÍ TU PERSONAJE ⚡</h2>
-  <div id="charGrid" style="display:flex;gap:12px;justify-content:center;align-items:flex-end;flex-wrap:wrap;"></div>
-  <p id="selMsg" style="color:#aaa;font-size:12px;margin-top:8px;text-align:center;">Tocá el personaje que querés usar</p>
-  <button id="btnFight" class="btnMain btnFight" style="display:none;margin-top:8px;">⚡ ¡A PELEAR!</button>
+  <h2>⚡ ELEGÍ TU PERSONAJE ⚡</h2>
+  <div id="charGrid"></div>
+  <p id="selMsg">Tocá el personaje que querés usar</p>
+  <button id="btnFight" class="btnMain btnFight">⚡ ¡A PELEAR!</button>
 </div>
 
 <!-- GAME -->
@@ -299,16 +321,14 @@ async function loadImg(path,noChroma=false){
   return new Promise(res=>{
     const img=new Image();img.crossOrigin='anonymous';
     img.onload=()=>res(noChroma?img:removeChroma(img));
-    img.onerror=()=>res(null);
+    img.onerror=()=>{console.warn('No cargó:',path);res(null);}
     img.src=BASE+path;
   });
 }
+
 const CHARS=[
   {
-    key:'machi',
-    name:'MACHI',
-    specialName:'CHAMPAGNE SUPERNOVA',
-    color:'#FFD700',
+    key:'machi',name:'MACHI',specialName:'CHAMPAGNE\nSUPERNOVA',color:'#FFD700',
     paths:{
       idle:['Machi/Machi_Idle_01.png','Machi/Machi_Idle_02.png','Machi/Machi_Idle_03.png','Machi/Machi_Idle_04.png','Machi/Machi_Idle_05.png'],
       walk:['Machi/Machi_Caminata_01.png','Machi/Machi_Caminata_02.png','Machi/Machi_Caminata_03.png','Machi/Machi_Caminata_04.png'],
@@ -322,10 +342,7 @@ const CHARS=[
     }
   },
   {
-    key:'mauron',
-    name:'MAURON',
-    specialName:'ABSOLUT PLANTS',
-    color:'#00FF7F',
+    key:'mauron',name:'MAURON',specialName:'ABSOLUT\nPLANTS',color:'#00FF7F',
     paths:{
       idle:['Mauron/Mauron_Idle_01.png','Mauron/Mauron_Idle_02.png','Mauron/Mauron_Idle_03.png','Mauron/Mauron_Idle_04.png','Mauron/Mauron_Idle_05.png'],
       walk:['Mauron/Mauron_Walk_01.png','Mauron/Mauron_Walk_02.png','Mauron/Mauron_Walk_03.png','Mauron/Mauron_Walk_04.png'],
@@ -340,10 +357,7 @@ const CHARS=[
     }
   },
   {
-    key:'yiyo',
-    name:'YIYO',
-    specialName:'MIAU ATTACK',
-    color:'#FF88FF',
+    key:'yiyo',name:'YIYO',specialName:'MIAU\nATTACK',color:'#FF88FF',
     paths:{
       idle:['Yiyo/Yiyo_Idle_01.png','Yiyo/Yiyo_Idle_02.png','Yiyo/Yiyo_Idle_03.png'],
       walk:['Yiyo/Yiyo_Walk_01.png','Yiyo/Yiyo_Walk_02.png','Yiyo/Yiyo_Walk_03.png','Yiyo/Yiyo_Walk_04.png'],
@@ -358,10 +372,7 @@ const CHARS=[
     }
   },
   {
-    key:'mario',
-    name:'MARIO',
-    specialName:'ALFRED AL RESCATE',
-    color:'#FF6600',
+    key:'mario',name:'MARIO',specialName:'ALFRED AL\nRESCATE',color:'#FF6600',
     paths:{
       idle:['Mario/Mario_Idle_01.png','Mario/Mario_Idle_02.png','Mario/Mario_Idle_03.png'],
       walk:['Mario/Mario_Walk_01.png','Mario/Mario_Walk_02.png','Mario/Mario_Walk_03.png'],
@@ -376,9 +387,8 @@ const CHARS=[
     }
   }
 ];
+
 let SP={},spritesLoaded=false;
-// SP[key] = sprites cargados de cada personaje
-// SP._p1, SP._p2 = sprites del personaje elegido por cada slot
 
 async function loadSprites(){
   if(spritesLoaded)return;
@@ -392,6 +402,7 @@ async function loadSprites(){
   CHARS.forEach((c,i)=>SP[c.key]=results[i]);
   SP.bg=await loadImg('Escenarios_001_Estudiantil_v2.png',true);
   spritesLoaded=true;
+  dbg('Sprites cargados ✓');
 }
 
 // ── CANVAS ────────────────────────────────────────────────────────
@@ -425,7 +436,6 @@ function initRound(){
 function initGS(){wins={p1:0,p2:0};currentRound=1;roundBanner=null;initRound();}
 
 // ── SPRITE HELPERS ────────────────────────────────────────────────
-// p1 siempre usa SP._p1, p2 siempre usa SP._p2
 function getSP(pk){return pk==='p1'?SP._p1:SP._p2;}
 function getFrames(pk,st){
   const s=getSP(pk),state=st||gs[pk].state;
@@ -492,24 +502,24 @@ function drawHUD(){
     ctx.strokeStyle=col;ctx.lineWidth=1;ctx.strokeRect(x,y3,bW,spH);
     if(pct>=1){ctx.save();ctx.globalAlpha=0.5+0.5*Math.sin(Date.now()*0.008);ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.strokeRect(x,y3,bW,spH);ctx.restore();}
   };
-  const p1name=SP._p1===SP.machi?'MACHI':'MAURON';
-  const p2name=SP._p2===SP.machi?'MACHI':'MAURON';
-  twoBar(10,gs.p1.hp/100,gs.p1.hp2/100,false);spBar(10,gs.p1.special/SPMAX,'#FFD700',false);
+  const p1def=SP._p1def,p2def=SP._p2def;
+  const p1name=p1def?.name||'P1',p2name=p2def?.name||'P2';
+  twoBar(10,gs.p1.hp/100,gs.p1.hp2/100,false);spBar(10,gs.p1.special/SPMAX,p1def?.color||'#FFD700',false);
   ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='left';ctx.fillText(p1name,12,y1+11);
-  twoBar(W-10-bW,gs.p2.hp/100,gs.p2.hp2/100,true);spBar(W-10-bW,gs.p2.special/SPMAX,'#00FF7F',true);
+  twoBar(W-10-bW,gs.p2.hp/100,gs.p2.hp2/100,true);spBar(W-10-bW,gs.p2.special/SPMAX,p2def?.color||'#00FF7F',true);
   ctx.textAlign='right';ctx.fillText(p2name,W-12,y1+11);
   ctx.fillStyle='rgba(0,0,0,0.7)';ctx.beginPath();ctx.roundRect(W/2-26,8,52,26,6);ctx.fill();
   ctx.fillStyle=gs.timer<=10?'#ff4444':'#fff';ctx.font='bold 18px Arial Black';ctx.textAlign='center';ctx.fillText(Math.ceil(gs.timer),W/2,26);
   for(let i=0;i<2;i++){ctx.fillStyle=wins.p1>i?'#FFD700':'rgba(255,255,255,0.2)';ctx.beginPath();ctx.arc(W/2-22+i*14,y3+spH+8,4,0,Math.PI*2);ctx.fill();}
-  for(let i=0;i<2;i++){ctx.fillStyle=wins.p2>i?'#00FF7F':'rgba(255,255,255,0.2)';ctx.beginPath();ctx.arc(W/2+8+i*14,y3+spH+8,4,0,Math.PI*2);ctx.fill();}
-  if(gs.p1.special>=SPMAX){ctx.save();ctx.globalAlpha=0.6+0.4*Math.sin(Date.now()*0.007);ctx.fillStyle='#FFD700';ctx.font='bold 8px Arial';ctx.textAlign='left';ctx.fillText('⚡LISTO!',12,y3+spH+10);ctx.restore();}
-  if(gs.p2.special>=SPMAX){ctx.save();ctx.globalAlpha=0.6+0.4*Math.sin(Date.now()*0.007);ctx.fillStyle='#00FF7F';ctx.font='bold 8px Arial';ctx.textAlign='right';ctx.fillText('⚡LISTO!',W-12,y3+spH+10);ctx.restore();}
+  for(let i=0;i<2;i++){ctx.fillStyle=wins.p2>i?(p2def?.color||'#00FF7F'):'rgba(255,255,255,0.2)';ctx.beginPath();ctx.arc(W/2+8+i*14,y3+spH+8,4,0,Math.PI*2);ctx.fill();}
+  if(gs.p1.special>=SPMAX){ctx.save();ctx.globalAlpha=0.6+0.4*Math.sin(Date.now()*0.007);ctx.fillStyle=p1def?.color||'#FFD700';ctx.font='bold 8px Arial';ctx.textAlign='left';ctx.fillText('⚡LISTO!',12,y3+spH+10);ctx.restore();}
+  if(gs.p2.special>=SPMAX){ctx.save();ctx.globalAlpha=0.6+0.4*Math.sin(Date.now()*0.007);ctx.fillStyle=p2def?.color||'#00FF7F';ctx.font='bold 8px Arial';ctx.textAlign='right';ctx.fillText('⚡LISTO!',W-12,y3+spH+10);ctx.restore();}
   if(specialPhase){
-    const launcherIsMachi=getSP(specialPhase.pk)===SP.machi;
-    const col=launcherIsMachi?'#FFD700':'#00FF7F';
+    const spDef=getSP(specialPhase.pk)===SP._p1?p1def:p2def;
+    const col=spDef?.color||'#FFD700';
     ctx.fillStyle=col;ctx.font='bold 12px Arial Black';ctx.textAlign='center';
     ctx.shadowColor=col;ctx.shadowBlur=8;
-    ctx.fillText(launcherIsMachi?'CHAMPAGNE SUPERNOVA':'ABSOLUT PLANTS',W/2,H-10);
+    ctx.fillText((spDef?.specialName||'SPECIAL').replace('\n',' '),W/2,H-10);
     ctx.shadowBlur=0;
   }
   if(roundBanner){
@@ -559,11 +569,11 @@ function drawCountdown(){
 function drawSpecial(){
   const s=specialPhase;if(!s)return;
   const pk=s.pk,ok=s.ok;
-  const launcherIsMachi=getSP(pk)===SP.machi;
+  const launcherDef=getSP(pk)===SP._p1?SP._p1def:SP._p2def;
+  const launcherKey=launcherDef?.key;
   if(!s.frozenOpp)s.frozenOpp={...gs[ok]};
   const frozenOpp=s.frozenOpp;
   drawBg();
-  // dibujar oponente congelado
   function drawFrz(frozenPk,fp){
     const frames=getFrames(frozenPk,fp.state);
     const img=frames[Math.min(fp.frame,Math.max(0,frames.length-1))];
@@ -578,50 +588,38 @@ function drawSpecial(){
       ctx.drawImage(oc,0,0);}else ctx.drawImage(img,0,0,dw,FH);
     ctx.restore();
   }
-  // dibujar frozen del oponente y lanzador por separado
   if(pk==='p1'){drawFrz('p2',frozenOpp);}else{drawFrz('p1',frozenOpp);}
   if(s.oppWiggle>0)s.oppWiggle--;
   const p=gs[pk];
-  if(launcherIsMachi){
-    const atkFrames=SP.machi?.special||[];
+  const spSP=getSP(pk);
+
+  // ── MACHI SPECIAL ──
+  if(launcherKey==='machi'){
+    const atkFrames=spSP?.special||[];
     const fi=Math.min(Math.floor(s.t/3),atkFrames.length-1);
     const af=atkFrames[fi];
     if(af){
       const dh=FH,dw=af.width*(dh/af.height)*1.12;
-      const bodyW=dw*0.25; // cuerpo ocupa 25% izq del sprite
+      const bodyW=dw*0.25;
       ctx.save();
-      if(p.facing>0){
-        // mira derecha: anclar izq del sprite al (p.x - bodyW)
-        ctx.translate(p.x-bodyW, p.y-dh);
-        ctx.drawImage(af,0,0,dw,dh);
-      } else {
-        // mira izquierda: espejamos horizontalmente
-        // el cuerpo queda a la derecha del sprite flipeado
-        // anclar el borde derecho en (p.x + bodyW)
-        ctx.translate(p.x+bodyW, p.y-dh);
-        ctx.scale(-1,1); // flip
-        ctx.drawImage(af,0,0,dw,dh); // dibuja desde 0, el flip lo invierte
-      }
+      if(p.facing>0){ctx.translate(p.x-bodyW,p.y-dh);ctx.drawImage(af,0,0,dw,dh);}
+      else{ctx.translate(p.x+bodyW,p.y-dh);ctx.scale(-1,1);ctx.drawImage(af,0,0,dw,dh);}
       ctx.restore();
     }
     const isLast=fi>=atkFrames.length-1;
     if(!s.holdStarted&&isLast){s.holdStarted=true;s.holdT=0;}
     if(s.holdStarted)s.holdT++;
-    // hit en frame 4+ (chorro extendido), sin esperar holdT
     if(fi>=4&&!s.damageDealt){
       s.damageDealt=true;
-      // el chorro llega hasta 280px adelante del cuerpo de Machi
-      const champTip=p.facing>0 ? p.x+280 : p.x-280;
+      const champTip=p.facing>0?p.x+280:p.x-280;
       const oppX=s.frozenOpp?.x||gs[ok].x;
-      dbg('champTip:'+Math.round(champTip)+' oppX:'+Math.round(oppX)+' dist:'+Math.round(Math.abs(champTip-oppX)));
-      // hit si el oponente está entre Machi y la punta del chorro
-      const inRange=p.facing>0
-        ? (oppX>p.x && oppX<champTip+80)
-        : (oppX<p.x && oppX>champTip-80);
-      if(inRange) applySpecialDamage(ok,pk,s);
+      const inRange=p.facing>0?(oppX>p.x&&oppX<champTip+80):(oppX<p.x&&oppX>champTip-80);
+      if(inRange)applySpecialDamage(ok,pk,s);
     }
-  } else {
-    const spF=SP.mauron?.special||[];
+
+  // ── MAURON SPECIAL ──
+  } else if(launcherKey==='mauron'){
+    const spF=spSP?.special||[];
     if(s.t<35){
       const fi=Math.min(Math.floor(s.t/9),spF.length-1);
       const sf=spF[fi];
@@ -635,7 +633,7 @@ function drawSpecial(){
         if(p.facing<0){ctx.translate(p.x+dw/2,p.y-FH);ctx.scale(-1,1);}
         else ctx.translate(p.x-dw/2,p.y-FH);
         ctx.drawImage(lastSF,0,0,dw,FH);ctx.restore();}
-      const plants=SP.mauron?.plants||[];
+      const plants=spSP?.plants||[];
       const fi=Math.min(Math.floor((s.t-35)/4),plants.length-1);
       const pf=plants[fi];
       if(pf){const ph=FH*0.85,pw=pf.width*(ph/pf.height);
@@ -648,7 +646,66 @@ function drawSpecial(){
         if(Math.abs(s.plantX-frozenOpp.x)<FW*1.5)applySpecialDamage(ok,pk,s);
       }
     }
+
+  // ── YIYO SPECIAL (módulo gatos) ──
+  } else if(launcherKey==='yiyo'){
+    const spF=spSP?.special||[];
+    const fi=Math.min(Math.floor(s.t/8),spF.length-1);
+    const sf=spF[fi];
+    if(sf){const dw=sf.width*(FH/sf.height);ctx.save();
+      if(p.facing<0){ctx.translate(p.x+dw/2,p.y-FH);ctx.scale(-1,1);}
+      else ctx.translate(p.x-dw/2,p.y-FH);
+      ctx.drawImage(sf,0,0,dw,FH);ctx.restore();}
+    if(fi>=spF.length-1){
+      const cats=spSP?.specialModule||[];
+      const ci=Math.min(Math.floor((s.t-spF.length*8)/5),cats.length-1);
+      if(ci>=0){
+        const cf=cats[ci];
+        if(cf){const ch=FH*0.7,cw=cf.width*(ch/cf.height);
+          const cx=s.plantX;
+          ctx.save();ctx.translate(cx,FLOOR);ctx.drawImage(cf,-cw/2,-ch,cw,ch);ctx.restore();}
+        const isLast=ci>=cats.length-1;
+        if(!s.holdStarted&&isLast){s.holdStarted=true;s.holdT=0;}
+        if(s.holdStarted)s.holdT++;
+        if(s.holdStarted&&s.holdT>=6&&!s.damageDealt){
+          s.damageDealt=true;
+          if(Math.abs(s.plantX-frozenOpp.x)<FW*1.5)applySpecialDamage(ok,pk,s);
+        }
+      }
+    }
+
+  // ── MARIO SPECIAL (módulo Alfred) ──
+  } else if(launcherKey==='mario'){
+    const spF=spSP?.special||[];
+    const fi=Math.min(Math.floor(s.t/8),spF.length-1);
+    const sf=spF[fi];
+    if(sf){const dw=sf.width*(FH/sf.height);ctx.save();
+      if(p.facing<0){ctx.translate(p.x+dw/2,p.y-FH);ctx.scale(-1,1);}
+      else ctx.translate(p.x-dw/2,p.y-FH);
+      ctx.drawImage(sf,0,0,dw,FH);ctx.restore();}
+    if(fi>=spF.length-1){
+      const alfred=spSP?.specialModule||[];
+      const ai=Math.min(Math.floor((s.t-spF.length*8)/5),alfred.length-1);
+      if(ai>=0){
+        const af=alfred[ai];
+        if(af){const ah=FH*0.9,aw=af.width*(ah/af.height);
+          // Alfred aparece del lado opuesto al lanzador
+          const ax=p.facing>0?p.x+180:p.x-180;
+          ctx.save();ctx.translate(ax,FLOOR);
+          if(p.facing>0)ctx.scale(-1,1);
+          ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}
+        const isLast=ai>=alfred.length-1;
+        if(!s.holdStarted&&isLast){s.holdStarted=true;s.holdT=0;}
+        if(s.holdStarted)s.holdT++;
+        if(s.holdStarted&&s.holdT>=6&&!s.damageDealt){
+          s.damageDealt=true;
+          const ax=p.facing>0?p.x+180:p.x-180;
+          if(Math.abs(ax-frozenOpp.x)<FW*1.8)applySpecialDamage(ok,pk,s);
+        }
+      }
+    }
   }
+
   s.t++;
   const done=s.holdStarted?s.holdT>=12:s.t>=90;
   if(done){
@@ -664,18 +721,14 @@ function drawSpecial(){
 function applySpecialDamage(targetKey,launcherKey,s){
   const target=gs[targetKey];if(target.state==='ko')return;
   s.oppHit=true;s.oppWiggle=60;
-  const launcherIsMachi=getSP(launcherKey)===SP.machi;
-  if(launcherIsMachi){
+  const launcherSP=getSP(launcherKey);
+  const launcherDef=launcherSP===SP._p1?SP._p1def:SP._p2def;
+  if(launcherDef?.key==='machi'){
     SFX.hurt();SFX.special();
-    // poner estado hurt con tint rojo
-    target.state='hurt';target.frame=0;
-    target.wiggle=60;
-    inv[targetKey]=25;
+    target.state='hurt';target.frame=0;target.wiggle=60;inv[targetKey]=25;
   } else {
     SFX.plant();
-    target.state='hurt';target.frame=0;
-    target.wiggle=60;
-    inv[targetKey]=25;
+    target.state='hurt';target.frame=0;target.wiggle=60;inv[targetKey]=25;
     if(target.grounded){target.vy=-6;target.grounded=false;}
   }
   if(!target.blocking){
@@ -693,13 +746,12 @@ function startKOSequence(loserKey,winnerKey){
   const loser=gs[loserKey];
   const dir=loser.x<gs[winnerKey].x?-1:1;
   SFX.ko();
-  const p1char=SP._p1===SP.machi?'MACHI':'MAURON';
-  const p2char=SP._p2===SP.machi?'MACHI':'MAURON';
+  const p1def=SP._p1def,p2def=SP._p2def;
   const p1user=vsMode==='cpu'?(currentUser?.displayName||'VOS'):currentUser?.displayName||'P1';
   const p2user=vsMode==='cpu'?'CPU':'RIVAL';
-  const wchar=winnerKey==='p1'?p1char:p2char;
+  const wdef=winnerKey==='p1'?p1def:p2def;
   const wuser=winnerKey==='p1'?p1user:p2user;
-  const wname=`${wchar}\n(${wuser})`;
+  const wname=`${wdef?.name||winnerKey.toUpperCase()}\n(${wuser})`;
   koSeq={loser:loserKey,winner:winnerKey,t:0,phase:'flyback',vx:dir*8,vy:-10,celebFrame:0,celebTimer:0,idleT:0,winnerName:wname};
   gs[loserKey].state='ko';gs[winnerKey].state='idle';gs[winnerKey].frame=0;
   gs.phase='ko';clearInterval(timerInt);
@@ -744,11 +796,7 @@ function drawKOOverlay(){
     ctx.fillStyle='#FFD700';
     ctx.font='bold '+Math.floor(W*0.065)+'px Arial Black';
     ctx.fillText(lines[0]+' WINS!',W/2,H*0.5);
-    if(lines[1]){
-      ctx.shadowBlur=0;ctx.fillStyle='rgba(255,255,255,0.7)';
-      ctx.font='bold '+Math.floor(W*0.025)+'px Arial';
-      ctx.fillText(lines[1],W/2,H*0.58);
-    }
+    if(lines[1]){ctx.shadowBlur=0;ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='bold '+Math.floor(W*0.025)+'px Arial';ctx.fillText(lines[1],W/2,H*0.58);}
     ctx.restore();
   }
 }
@@ -781,8 +829,8 @@ function physicsTick(){
   }
   gs.p1.x=Math.max(60,Math.min(W-60,gs.p1.x));
   gs.p2.x=Math.max(60,Math.min(W-60,gs.p2.x));
-  if(!['attack','special','hurt','ko','defeated','block'].includes(gs.p1.state))gs.p1.facing=gs.p2.x>gs.p1.x?1:-1;
-  if(!['attack','special','hurt','ko','defeated','block'].includes(gs.p2.state))gs.p2.facing=gs.p1.x>gs.p2.x?1:-1;
+  if(!['attack','special','hurt','ko','block','defeated'].includes(gs.p1.state))gs.p1.facing=gs.p2.x>gs.p1.x?1:-1;
+  if(!['attack','special','hurt','ko','block','defeated'].includes(gs.p2.state))gs.p2.facing=gs.p1.x>gs.p2.x?1:-1;
   bgOffset=Math.max(0,Math.min(1,((gs.p1.x+gs.p2.x)/2-W*0.35)/(W*0.3)));
 }
 
@@ -790,35 +838,20 @@ function physicsTick(){
 function applyInput(pk,inp){
   const p=gs[pk];if(['ko','defeated','special'].includes(p.state))return;
   const ok=pk==='p1'?'p2':'p1',opp=gs[ok];
-  // bloqueo — no se puede mover
   p.blocking=!!(inp.block&&p.grounded);
-  if(p.blocking&&p.state!=='attack'){p.state='block';return;} // cortar input si está bloqueando
+  if(p.blocking&&p.state!=='attack'){p.state='block';return;}
   else if(!p.blocking&&p.state==='block')p.state='idle';
-
-  // dash — detectar doble tap
-  if(!p._dashTimer)p._dashTimer=0;
-  if(!p._lastDir)p._lastDir=0;
-  if(!p._dashing)p._dashing=false;
-  if(!p._dashT)p._dashT=0;
-
+  if(!p._dashTimer)p._dashTimer=0;if(!p._lastDir)p._lastDir=0;if(!p._dashing)p._dashing=false;if(!p._dashT)p._dashT=0;
   const curDir=inp.left?-1:inp.right?1:0;
-  if(curDir!==0&&curDir===p._lastDir&&p._dashTimer>0&&p._dashTimer<15){
-    // doble tap detectado
-    p._dashing=true;p._dashT=18;
-  }
-  if(curDir!==0)p._dashTimer=15;
-  else if(p._dashTimer>0)p._dashTimer--;
-  p._lastDir=curDir;
-
-  if(p._dashT>0)p._dashT--;
-  else p._dashing=false;
-
+  if(curDir!==0&&curDir===p._lastDir&&p._dashTimer>0&&p._dashTimer<15){p._dashing=true;p._dashT=18;}
+  if(curDir!==0)p._dashTimer=15;else if(p._dashTimer>0)p._dashTimer--;
+  p._lastDir=curDir;if(p._dashT>0)p._dashT--;else p._dashing=false;
   const speed=p._dashing?8.5:4.5;
-
   if(inp.left){p.x-=speed;if(p.grounded&&p.state!=='attack')p.state=p._dashing?'jump':'walk';if(p._dashing)p.frame=1;}
   else if(inp.right){p.x+=speed;if(p.grounded&&p.state!=='attack')p.state=p._dashing?'jump':'walk';if(p._dashing)p.frame=1;}
   else if(p.state==='walk')p.state='idle';
   if(!['attack','hurt','ko','block','defeated'].includes(p.state))p.facing=opp.x>p.x?1:-1;
+  if(inp.jump&&p.grounded&&!['attack','hurt','ko','defeated'].includes(p.state)){p.vy=-14;p.grounded=false;p.state='jump';p.frame=0;SFX.jump();}
   if(inp.attack&&p.state!=='attack'&&!['hurt','ko','defeated'].includes(p.state)&&hitCD[pk]===0){
     p.state='attack';p.frame=0;p._attackHit=false;
     p._airAtk=!p.grounded?(Math.random()<0.5?'jumpKick':'jumpPunch'):null;
@@ -841,7 +874,7 @@ function applyInput(pk,inp){
   }
   if(inp.special&&p.special>=SPMAX&&!['hurt','ko','defeated','special'].includes(p.state)){
     p.special=0;p.state='special';p.frame=0;
-    gs.phase='special';gs.specialName=getSP(pk)===SP.machi?'MACHI':'MAURON';
+    gs.phase='special';
     specialPhase={pk,ok,t:0,damageDealt:false,plantX:p.x+(p.facing>0?220:-220),frozenOpp:null,oppHit:false,oppWiggle:0,holdStarted:false,holdT:0};
     SFX.special();
   }
@@ -939,55 +972,106 @@ function renderLoop(){
   requestAnimationFrame(renderLoop);
 }
 
-// ── CHAR SELECT ───────────────────────────────────────────────────
-let myCharChoice=null,selIdleTimer=0,selIdleFrame=0,selAnimId=null;
+// ══════════════════════════════════════════════════════════════════
+// ── CHAR SELECT (NUEVO — dinámico) ────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+let myCharChoice=null,selAnimId=null,selIdleFrame=0,selIdleTimer=0;
+
+function buildCharGrid(){
+  const grid=$('charGrid');
+  grid.innerHTML='';
+  CHARS.forEach((ch,i)=>{
+    const card=document.createElement('div');
+    card.className='charCard';
+    card.id='selCard'+i;
+    card.innerHTML=`
+      <canvas id="selCanvas${i}" width="110" height="165"></canvas>
+      <div class="charName" style="color:${ch.color}">${ch.name}</div>
+      <div class="charSpecial">${ch.specialName.replace('\n',' ')}</div>
+    `;
+    card.addEventListener('click',()=>selectChar(i));
+    grid.appendChild(card);
+  });
+}
 
 function showSelectScreen(){
   myCharChoice=null;
   $('btnFight').style.display='none';
   $('selMsg').textContent='Tocá el personaje que querés usar';
-  ['selCard0','selCard1'].forEach(id=>{$(id).style.borderColor='transparent';$(id).style.opacity='1';$(id).style.pointerEvents='auto';});
+  buildCharGrid();
   show('selectScreen');
 
+  // guest en online: esperar que el host elija
   if(vsMode==='online'&&myRole==='guest'){
-    ['selCard0','selCard1'].forEach(id=>{$(id).style.opacity='0.3';$(id).style.pointerEvents='none';});
+    CHARS.forEach((_,i)=>{
+      const c=$('selCard'+i);
+      if(c){c.style.opacity='0.35';c.style.pointerEvents='none';}
+    });
     $('selMsg').textContent='Esperando que el rival elija...';
     const hcRef=ref(db,`rooms/${roomCode}/hostChar`);
     onValue(hcRef,snap=>{
       const hc=snap.val();if(!hc)return;
       off(hcRef);
-      myCharChoice=hc==='machi'?'mauron':'machi';
-      const idx=myCharChoice==='machi'?0:1;
-      $(('selCard'+idx)).style.opacity='1';
-      $(('selCard'+idx)).style.borderColor=idx===0?'#FFD700':'#00FF7F';
-      $('selMsg').textContent='¡Jugás con '+myCharChoice.toUpperCase()+'! Apretá cuando estés listo';
-      $('btnFight').style.display='block';
-      $('btnFight').textContent='⚡ ¡ESTOY LISTO!';
+      // guest elige cualquier personaje diferente al host
+      const available=CHARS.filter(c=>c.key!==hc);
+      // habilitar solo los disponibles
+      CHARS.forEach((c,i)=>{
+        const card=$('selCard'+i);if(!card)return;
+        if(c.key!==hc){card.style.opacity='1';card.style.pointerEvents='auto';}
+        else{card.style.opacity='0.25';card.style.pointerEvents='none';}
+      });
+      $('selMsg').textContent='¡Elegí tu personaje!';
     });
   }
 
+  // animación idle de cada personaje en su card canvas
   function animSel(){
-    selIdleTimer++;if(selIdleTimer>8){selIdleTimer=0;selIdleFrame++;}
-    ['machi','mauron'].forEach((ch,i)=>{
-      const sc=$('selCanvas'+i),sx=sc.getContext('2d');sx.clearRect(0,0,120,180);
-      const frames=SP[ch]?.idle||[];const img=frames[selIdleFrame%Math.max(1,frames.length)];
-      if(img){const s=180/img.height,dw=img.width*s;sx.drawImage(img,(120-dw)/2,0,dw,180);}
+    selIdleTimer++;
+    if(selIdleTimer>8){selIdleTimer=0;selIdleFrame++;}
+    CHARS.forEach((ch,i)=>{
+      const sc=$('selCanvas'+i);if(!sc)return;
+      const sx=sc.getContext('2d');sx.clearRect(0,0,110,165);
+      const frames=SP[ch.key]?.idle||[];
+      if(!frames.length)return;
+      const img=frames[selIdleFrame%frames.length];
+      if(!img)return;
+      const s=165/img.height,dw=img.width*s;
+      sx.drawImage(img,(110-dw)/2,0,dw,165);
     });
     selAnimId=requestAnimationFrame(animSel);
   }
   if(selAnimId)cancelAnimationFrame(selAnimId);
-  animSel();
+  selAnimId=requestAnimationFrame(animSel);
 }
 
-window.selectChar=async function(idx){
-  if(myRole==='guest')return;
-  if(myCharChoice)return;
-  myCharChoice=idx===0?'machi':'mauron';
-  $('selCard'+idx).style.borderColor=idx===0?'#FFD700':'#00FF7F';
-  if(vsMode==='online'&&roomRef){
-    await update(roomRef,{hostChar:myCharChoice,guestReady:false});
+function selectChar(idx){
+  if(vsMode==='online'&&myRole==='guest'){
+    // guest puede elegir cualquier habilitado
+    const card=$('selCard'+idx);
+    if(!card||card.style.pointerEvents==='none')return;
+  } else {
+    // host o cpu: libre elección
+  }
+  if(myCharChoice)return; // ya eligió
+
+  myCharChoice=CHARS[idx].key;
+  // marcar visualmente
+  CHARS.forEach((_,i)=>{
+    const c=$('selCard'+i);if(!c)return;
+    c.classList.remove('selected-p1','selected-p2');
+    if(i===idx)c.classList.add(myRole==='host'?'selected-p1':'selected-p2');
+    else{c.style.opacity='0.4';c.style.pointerEvents='none';}
+  });
+
+  if(vsMode==='cpu'){
+    $('selMsg').textContent='¡Listo! ¿Arrancamos?';
+    $('btnFight').style.display='block';
+    $('btnFight').textContent='⚡ ¡A PELEAR!';
+    $('btnFight').disabled=false;
+  } else if(myRole==='host'){
+    update(roomRef,{hostChar:myCharChoice,guestReady:false});
     $('selMsg').textContent='Esperando que el rival elija...';
-    // host espera que el guest esté listo
+    // escuchar cuando guest esté listo
     const grRef=ref(db,`rooms/${roomCode}/guestReady`);
     onValue(grRef,snap=>{
       if(snap.val()!==true)return;
@@ -995,73 +1079,62 @@ window.selectChar=async function(idx){
       $('selMsg').textContent='¡El rival está listo!';
       $('btnFight').style.display='block';
       $('btnFight').textContent='⚡ ¡A PELEAR!';
+      $('btnFight').disabled=false;
     });
   } else {
-    $('selMsg').textContent='¡Listo!';
-    $('btnFight').style.display='block';
-    $('btnFight').textContent='⚡ ¡A PELEAR!';
-  }
-};
-
-$('btnFight').onclick=async function(){
-  if(!myCharChoice)return;
-  if(selAnimId)cancelAnimationFrame(selAnimId);
-
-  let oppCharKey;
-  if(vsMode==='cpu'){
-    // CPU elige un personaje diferente al del jugador
-    const others=CHARS.filter(c=>c.key!==myCharChoice);
-    oppCharKey=others[Math.floor(Math.random()*others.length)].key;
-  } else if(myRole==='host'){
-    // necesitamos saber qué eligió el guest — está en Firebase
-    const snap=await get(ref(db,`rooms/${roomCode}/guestChar`));
-    oppCharKey=snap.val()||CHARS.find(c=>c.key!==myCharChoice).key;
-  } else {
-    // guest: el host eligió hostChar
-    const snap=await get(ref(db,`rooms/${roomCode}/hostChar`));
-    oppCharKey=snap.val()||CHARS.find(c=>c.key!==myCharChoice).key;
-    await update(roomRef,{guestChar:myCharChoice,guestReady:true});
-  }
-
-  if(vsMode==='cpu'){
-    SP._p1=SP[myCharChoice];SP._p1def=CHARS.find(c=>c.key===myCharChoice);
-    SP._p2=SP[oppCharKey];SP._p2def=CHARS.find(c=>c.key===oppCharKey);
-  } else if(myRole==='host'){
-    SP._p1=SP[myCharChoice];SP._p1def=CHARS.find(c=>c.key===myCharChoice);
-    SP._p2=SP[oppCharKey];SP._p2def=CHARS.find(c=>c.key===oppCharKey);
-  } else {
-    SP._p1=SP[oppCharKey];SP._p1def=CHARS.find(c=>c.key===oppCharKey);
-    SP._p2=SP[myCharChoice];SP._p2def=CHARS.find(c=>c.key===myCharChoice);
-  }
-
-  dbg('p1:'+SP._p1def?.name+' p2:'+SP._p2def?.name+' role:'+myRole);
-
-  if(vsMode==='online'&&myRole==='host'){
-    $('btnFight').disabled=true;
-    $('selMsg').textContent='Esperando que el rival confirme...';
-    await update(roomRef,{hostReady:true});
-    const hrRef=ref(db,`rooms/${roomCode}/guestReady`);
-    onValue(hrRef,snap=>{
-      if(snap.val()!==true)return;
-      off(hrRef);launchFight();
-    });
-    return;
-  }
-  if(vsMode==='online'&&myRole==='guest'){
-    $('btnFight').disabled=true;
-    $('selMsg').textContent='Esperando que el rival confirme...';
+    // guest: marcar que eligió y está listo
+    update(roomRef,{guestChar:myCharChoice,guestReady:true});
+    $('selMsg').textContent='Esperando que el host confirme...';
     const hrRef=ref(db,`rooms/${roomCode}/hostReady`);
     onValue(hrRef,snap=>{
       if(snap.val()!==true)return;
-      off(hrRef);launchFight();
+      off(hrRef);
+      $('selMsg').textContent='¡El host está listo!';
+      $('btnFight').style.display='block';
+      $('btnFight').textContent='⚡ ¡A PELEAR!';
+      $('btnFight').disabled=false;
     });
-    return;
   }
+}
+
+$('btnFight').onclick=async function(){
+  if(!myCharChoice)return;
+  if(selAnimId){cancelAnimationFrame(selAnimId);selAnimId=null;}
+  $('btnFight').disabled=true;
+
+  let p1CharKey,p2CharKey;
+
+  if(vsMode==='cpu'){
+    const others=CHARS.filter(c=>c.key!==myCharChoice);
+    const oppKey2=others[Math.floor(Math.random()*others.length)].key;
+    p1CharKey=myCharChoice;p2CharKey=oppKey2;
+  } else if(myRole==='host'){
+    const snap=await get(ref(db,`rooms/${roomCode}/guestChar`));
+    const guestChar=snap.val()||CHARS.find(c=>c.key!==myCharChoice).key;
+    await update(roomRef,{hostReady:true});
+    p1CharKey=myCharChoice;p2CharKey=guestChar;
+  } else {
+    const snap=await get(ref(db,`rooms/${roomCode}/hostChar`));
+    const hostChar=snap.val()||CHARS.find(c=>c.key!==myCharChoice).key;
+    // guest es siempre p2 en la vista del host, pero p1 en la suya
+    p1CharKey=myCharChoice;p2CharKey=hostChar;
+  }
+
+  // Asignar _p1/_p2 según rol
+  if(myRole==='host'||vsMode==='cpu'){
+    SP._p1=SP[p1CharKey];SP._p1def=CHARS.find(c=>c.key===p1CharKey);
+    SP._p2=SP[p2CharKey];SP._p2def=CHARS.find(c=>c.key===p2CharKey);
+  } else {
+    // guest: yo soy p2
+    SP._p1=SP[p2CharKey];SP._p1def=CHARS.find(c=>c.key===p2CharKey);
+    SP._p2=SP[p1CharKey];SP._p2def=CHARS.find(c=>c.key===p1CharKey);
+  }
+
+  dbg('p1:'+SP._p1def?.name+' p2:'+SP._p2def?.name+' role:'+myRole);
   launchFight();
 };
 
 function launchFight(){
-  dbg('p1:'+(SP._p1===SP.machi?'MACHI':'MAURON')+' p2:'+(SP._p2===SP.machi?'MACHI':'MAURON')+' role:'+myRole);
   initGS();setupSync();setupTouch();
   showCanvas();startMusic();
   requestAnimationFrame(renderLoop);
@@ -1073,8 +1146,7 @@ function startCountdown(){
   dbg('countdown START');
   gs.phase='countdown';
   countdown={n:3,t:0};
-  // hostTick corre pero no hace nada durante countdown
-  if(myRole==='host'){
+  if(myRole==='host'||vsMode==='cpu'){
     if(window._hostInterval)clearInterval(window._hostInterval);
     window._hostInterval=setInterval(hostTick,TICK);
   }
@@ -1082,43 +1154,33 @@ function startCountdown(){
   if(window._cdInt)clearInterval(window._cdInt);
   window._cdInt=setInterval(()=>{
     n--;
-    dbg('countdown n='+n);
-    if(n<0){
-      clearInterval(window._cdInt);window._cdInt=null;
-      countdown=null;
-      gs.phase='fight';
-      if(myRole==='host')startTimer();
-      dbg('FIGHT!');
-      return;
-    }
-    countdown={n,t:0};
-    resumeAC();playTone(n===0?1047:660,'sine',0.15,0.4);
+    if(n<0){clearInterval(window._cdInt);window._cdInt=null;countdown=null;gs.phase='fight';if(myRole==='host'||vsMode==='cpu')startTimer();dbg('FIGHT!');return;}
+    countdown={n,t:0};resumeAC();playTone(n===0?1047:660,'sine',0.15,0.4);
   },1000);
 }
 
 // ── START GAME ────────────────────────────────────────────────────
 async function startGame(){
+  show('waitingScreen');
   if(vsMode==='cpu'){
-    show('waitingScreen');
-    $('waitMsg').textContent='Cargando...';
+    $('waitMsg').textContent='Cargando sprites...';
     $('displayCode').style.display='none';
     $('btnCancel').style.display='none';
   } else {
-    show('waitingScreen');
     $('displayCode').style.display='block';
     $('btnCancel').style.display='block';
   }
   await loadSprites();
   myKey=myRole==='host'?'p1':'p2';
   oppKey=myRole==='host'?'p2':'p1';
-  dbg('role:'+myRole+' vsMode:'+vsMode);
+  dbg('Listo. role:'+myRole+' vsMode:'+vsMode);
   showSelectScreen();
 }
 
 // ── WIN BUTTONS ───────────────────────────────────────────────────
 $('btnRevanche').onclick=async()=>{
   if(vsMode==='cpu'){startGame();return;}
-  if(myRole==='host'){await update(roomRef,{status:'ready',state:null,hostChar:null,guestReady:false});startGame();}
+  if(myRole==='host'){await update(roomRef,{status:'ready',state:null,hostChar:null,guestReady:false,hostReady:false,guestChar:null});startGame();}
   else{show('waitingScreen');$('waitMsg').textContent='Esperando revancha...';}
 };
 $('btnLobbyBack').onclick=async()=>{
