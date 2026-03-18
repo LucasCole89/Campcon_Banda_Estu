@@ -536,16 +536,19 @@ function tickSpecialNoFreeze(){
   if(lKey!=='yiyo'&&lKey!=='mario')return;
   const spSP=getSP(pk);
   const spF=spSP?.special||[];
-  const invocDur=spF.length*10;
+  const invocDur=spF.length*10; // 30 ticks
 
   if(lKey==='yiyo'){
     if(s.t>=invocDur){
+      // init cats on first frame after invoc
       if(s.catX===undefined){s.catX=-80;s.catFrameT=0;s.catFi=0;}
-      s.catX+=8; // faster cats
+      s.catX+=16; // double speed
       s.catFrameT++;
-      if(s.catFrameT>=60){s.catFrameT=0;s.catFi=(s.catFi+1)%3;}
-      if(!s.damageDealt&&Math.abs(s.catX-gs[ok].x)<FW*1.4){
-        s.damageDealt=true;applySpecialDamage(ok,pk,null);
+      if(s.catFrameT>=45){s.catFrameT=0;s.catFi=(s.catFi+1)%3;}
+      // wider hit zone: track if cat is crossing opponent's x
+      if(!s.damageDealt){
+        const dx=Math.abs(s.catX-gs[ok].x);
+        if(dx<FW*2.2){s.damageDealt=true;applySpecialDamage(ok,pk,null);}
       }
       if(s.catX>W+100)s.holdStarted=true;
     }
@@ -553,7 +556,7 @@ function tickSpecialNoFreeze(){
     if(s.t>=invocDur){
       if(!s.alfredInit){s.alfredInit=true;s.alfredX=-80;s.alfredPhase='enter';s.alfredT=0;}
       if(s.alfredPhase==='enter'){
-        s.alfredX+=9;
+        s.alfredX+=18; // double speed
         if(s.alfredX>=gs[ok].x-FW*0.8){s.alfredPhase='punch05';s.alfredT=0;}
       } else if(s.alfredPhase==='punch05'){
         s.alfredT++;
@@ -562,13 +565,15 @@ function tickSpecialNoFreeze(){
       } else if(s.alfredPhase==='punch06'){
         s.alfredT++;if(s.alfredT>=50){s.alfredPhase='exit';s.alfredT=0;}
       } else if(s.alfredPhase==='exit'){
-        s.alfredX-=9;if(s.alfredX<-100)s.holdStarted=true;
+        s.alfredX-=18; // double speed
+        if(s.alfredX<-100)s.holdStarted=true;
       }
     }
   }
 
   s.t++;
-  if(s.holdStarted){
+  // safety: force clear after 300 ticks
+  if(s.holdStarted||s.t>300){
     specialPhase=null;
     if(gs.phase!=='ko'){gs.phase='fight';gs[pk].state='idle';gs[pk].frame=0;}
   }
@@ -579,25 +584,36 @@ function drawSpecialOverlay(){
   const s=specialPhase;if(!s)return;
   const{pk}=s;
   const lKey=(pk==='p1'?SP._p1def:SP._p2def)?.key;
+  if(lKey!=='yiyo'&&lKey!=='mario')return;
   const spSP=getSP(pk);
   const fhPk=pkFH(pk);
+  const p=gs[pk];
   const spF=spSP?.special||[];
   const invocDur=spF.length*10;
 
-  if(lKey==='yiyo'){
-    // draw cats if active
-    if(s.catX!==undefined){
-      const cats=spSP?.specialModule||[];
-      const cf=cats[s.catFi||0];
-      if(cf){const ch=fhPk*0.975,cw=cf.width*(ch/cf.height);ctx.save();ctx.translate(s.catX,FLOOR);ctx.drawImage(cf,-cw/2,-ch,cw,ch);ctx.restore();}
-    }
-  } else if(lKey==='mario'){
-    if(s.alfredInit){
-      const alfred=spSP?.specialModule||[];
-      const afIdx={enter:0,punch05:1,punch06:2,exit:3}[s.alfredPhase]||0;
-      const af=alfred[afIdx];
-      if(af){const ah=fhPk*0.95,aw=af.width*(ah/af.height);ctx.save();ctx.translate(s.alfredX,FLOOR);ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}
-    }
+  // Always draw the launcher with invocation animation (or last invoc frame)
+  const invocFi=Math.min(Math.floor(s.t/10),spF.length-1);
+  const invocSprite=spF[invocFi];
+  if(invocSprite){
+    const dw=invocSprite.width*(fhPk/invocSprite.height);
+    ctx.save();
+    if(p.facing<0){ctx.translate(p.x+dw/2,p.y-fhPk);ctx.scale(-1,1);}
+    else ctx.translate(p.x-dw/2,p.y-fhPk);
+    ctx.drawImage(invocSprite,0,0,dw,fhPk);
+    ctx.restore();
+  }
+
+  if(lKey==='yiyo'&&s.catX!==undefined){
+    const cats=spSP?.specialModule||[];
+    const cf=cats[s.catFi||0];
+    if(cf){const ch=fhPk*0.975,cw=cf.width*(ch/cf.height);
+      ctx.save();ctx.translate(s.catX,FLOOR);ctx.drawImage(cf,-cw/2,-ch,cw,ch);ctx.restore();}
+  } else if(lKey==='mario'&&s.alfredInit){
+    const alfred=spSP?.specialModule||[];
+    const afIdx={enter:0,punch05:1,punch06:2,exit:3}[s.alfredPhase]||0;
+    const af=alfred[afIdx];
+    if(af){const ah=fhPk*0.95,aw=af.width*(ah/af.height);
+      ctx.save();ctx.translate(s.alfredX,FLOOR);ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}
   }
 }
 
@@ -646,7 +662,13 @@ function updateKOSeq(){
     }
     gs[s.winner].frame=s.celebFrame;
     if(isMario)gs[s.winner].wiggle=2;
-    if(s.t>240){s.phase='done';SFX.win();stopMusic();setTimeout(()=>{hideCanvas();$('winTxt').textContent=s.winnerName+' WINS!';show('winScreen');},500);}
+    if(s.t>240){
+      s.phase='done';
+      // limpiar wiggle
+      gs[s.winner].wiggle=0;
+      SFX.win();stopMusic();
+      setTimeout(()=>{hideCanvas();$('winTxt').textContent=s.winnerName+' WINS!';show('winScreen');},500);
+    }
   }
 }
 function drawKOOverlay(){
