@@ -349,7 +349,20 @@ function showLobby(){
   show('lobbyScreen');
 }
 
-window.joinSala=async code=>{$('roomCodeInput').value=code;$('btnJoin').click();};
+window.joinSala=async code=>{
+  if(!currentUser){err('Necesitás estar logueado');return;}
+  try{
+    roomCode=code;roomRef=ref(db,`rooms/${roomCode}`);
+    const snap=await get(roomRef);
+    if(!snap.exists()){err('Sala no encontrada');return;}
+    const d=snap.val();
+    if(d.status!=='waiting'){err('Sala ya en juego');return;}
+    await update(roomRef,{guest:currentUser.uid,guestName:currentUser.displayName||'Guest',status:'ready'});
+    onDisconnect(roomRef).remove();
+    myRole='guest';vsMode='online';
+    startGame();
+  }catch(e){err('Error: '+e.message);console.error(e);}
+};
 
 function genCode(){return Math.random().toString(36).substr(2,4).toUpperCase();}
 
