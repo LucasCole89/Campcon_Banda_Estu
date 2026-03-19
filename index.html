@@ -133,7 +133,7 @@ canvas{display:block;touch-action:none;}
 <div id="rotateMsg"><div class="icon">📱</div><p>Rotá el teléfono<br>para jugar 🕹️</p></div>
 <div id="dbg"></div>
 <div class="screen" id="splashScreen">
-  <img id="splashImg" src="" alt="" style="width:100%;height:100%;object-fit:contain;display:block;">
+  <video id="splashVideo" src="" style="width:100%;height:100%;object-fit:contain;display:block;" autoplay muted playsinline></video>
 </div>
 <div class="screen hidden" id="loginScreen">
   <div class="title-wrap"><span class="tl1">💥 ESTU'S FIGHTERS</span><span class="tvs">VS</span><span class="tl2">RODRIGUITOS ⭐</span></div>
@@ -246,7 +246,14 @@ function startMusic(){if(musicNode)return;resumeAC();const bpm=128,beat=60/bpm;l
 function stopMusic(){if(musicNode){clearTimeout(musicNode);musicNode=null;}}
 
 // ── SPLASH ───────────────────────────────────────────────────────
-(()=>{const img=$('splashImg');img.src=BASE+'Placa_Inicio.jpeg';img.onerror=()=>showScreen('loginScreen');$('splashScreen').addEventListener('click',()=>showScreen('loginScreen'),{once:true});setTimeout(()=>{if(!$('splashScreen').classList.contains('hidden'))showScreen('loginScreen');},4000);})();
+(()=>{
+  const vid=$('splashVideo');
+  vid.src=BASE+'Presentacion_Video_Estu.mp4';
+  vid.onerror=()=>showScreen('loginScreen');
+  vid.onended=()=>showScreen('loginScreen');
+  $('splashScreen').addEventListener('click',()=>showScreen('loginScreen'),{once:true});
+  setTimeout(()=>{if(!$('splashScreen').classList.contains('hidden'))showScreen('loginScreen');},15000);
+})();
 
 // ── AUTH ─────────────────────────────────────────────────────────
 let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null;
