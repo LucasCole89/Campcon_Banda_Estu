@@ -108,6 +108,7 @@ canvas{display:block;touch-action:none;}
       <div class="menuCard cardOnline" id="cardOnline"><div class="icon">🌐</div><div class="lbl">ONLINE</div></div>
     </div>
     <button class="btn btnLogout" id="btnLogout">Cerrar sesión</button>
+    <button class="btn" id="btnStats" style="background:linear-gradient(135deg,#1a3a1a,#2a6a2a);color:#7fff7f;font-size:8px;padding:5px 14px;">📊 ESTADÍSTICAS</button>
     <div style="font-size:8px;color:rgba(255,255,255,0.2);font-family:monospace;">v0.22</div>
   </div>
   <div class="lobbyRight">
@@ -123,7 +124,46 @@ canvas{display:block;touch-action:none;}
   </div>
   <p id="errMsg"></p>
 </div>
-<div class="screen hidden" id="waitingScreen">
+<!-- STATS -->
+<div class="screen hidden" id="statsScreen">
+  <div style="position:fixed;inset:0;background:linear-gradient(135deg,#0a0a1a,#0a1a0a);display:flex;flex-direction:column;align-items:stretch;padding:10px;gap:8px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <h2 style="color:#7fff7f;font-size:clamp(14px,3vw,22px);">📊 ESTADÍSTICAS</h2>
+      <button class="btn" id="btnCloseStats" style="background:rgba(255,255,255,0.1);color:#aaa;font-size:10px;padding:5px 12px;">✕ Cerrar</button>
+    </div>
+    <!-- tabs -->
+    <div style="display:flex;gap:6px;">
+      <button class="statTab active" data-tab="mis">👤 MIS STATS</button>
+      <button class="statTab" data-tab="rivales">⚔️ RIVALES</button>
+      <button class="statTab" data-tab="top">🏆 TOP 10</button>
+    </div>
+    <!-- contenido -->
+    <div id="statsContent" style="flex:1;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<style>
+.statTab{font-family:'Arial Black',sans-serif;font-size:9px;padding:6px 12px;border:none;border-radius:6px;cursor:pointer;background:rgba(255,255,255,0.07);color:#aaa;letter-spacing:1px;transition:background .2s,color .2s;}
+.statTab.active{background:rgba(127,255,127,0.15);color:#7fff7f;border:1px solid rgba(127,255,127,0.3);}
+.statBox{background:rgba(255,255,255,0.05);border-radius:8px;padding:10px 14px;margin-bottom:8px;}
+.statBox h3{font-size:9px;color:#aaa;letter-spacing:2px;margin-bottom:8px;}
+.statRow{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.statRow:last-child{border-bottom:none;}
+.statLbl{font-size:9px;color:#ccc;}
+.statVal{font-size:11px;color:#fff;font-family:'Arial Black',sans-serif;}
+.statVal.green{color:#7fff7f;}
+.statVal.red{color:#ff7f7f;}
+.statVal.gold{color:#FFD700;}
+.topRow{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;margin-bottom:3px;background:rgba(255,255,255,0.04);}
+.topRow.me{background:rgba(127,255,127,0.08);border:1px solid rgba(127,255,127,0.2);}
+.topRank{font-size:11px;width:22px;text-align:center;font-family:'Arial Black',sans-serif;color:#aaa;}
+.topName{flex:1;font-size:9px;color:#ddd;}
+.topPts{font-size:11px;color:#FFD700;font-family:'Arial Black',sans-serif;}
+.h2hRow{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.04);margin-bottom:4px;}
+.h2hName{font-size:9px;color:#ddd;flex:1;}
+.h2hScore{font-size:10px;font-family:'Arial Black',sans-serif;}
+.noData{font-size:9px;color:#555;text-align:center;padding:20px;}
+</style>
   <h2 id="waitTitle">Compartí el código</h2>
   <div class="roomCode" id="displayCode" style="display:none;">----</div>
   <p id="waitMsg" style="color:#aaa;font-size:14px;">Esperando...</p>
@@ -150,7 +190,7 @@ canvas{display:block;touch-action:none;}
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,signInWithPopup,GoogleAuthProvider,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getDatabase,ref,set,get,onValue,update,remove,off,onDisconnect}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import{getDatabase,ref,set,get,onValue,update,remove,off,onDisconnect,runTransaction,query,orderByChild,limitToLast}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
 const FB={apiKey:"AIzaSyBLii7JWZgNSoMZ7xLWeFRYvQ2Wx4snX-k",authDomain:"campcon-banda-estu.firebaseapp.com",databaseURL:"https://campcon-banda-estu-default-rtdb.firebaseio.com",projectId:"campcon-banda-estu",storageBucket:"campcon-banda-estu.firebasestorage.app",messagingSenderId:"790816311475",appId:"1:790816311475:web:7835a520eaa7545d2cc8c6"};
 const fbApp=initializeApp(FB);const auth=getAuth(fbApp);const db=getDatabase(fbApp);
@@ -190,6 +230,129 @@ function stopMusic(){if(musicNode){clearTimeout(musicNode);musicNode=null;}}
 
 // ── SPLASH ───────────────────────────────────────────────────────
 (()=>{const img=$('splashImg');img.src=BASE+'Placa_Inicio.jpeg';img.onerror=()=>showScreen('loginScreen');$('splashScreen').addEventListener('click',()=>showScreen('loginScreen'),{once:true});setTimeout(()=>{if(!$('splashScreen').classList.contains('hidden'))showScreen('loginScreen');},4000);})();
+
+// ── STATS ────────────────────────────────────────────────────────
+$('btnStats').onclick=()=>showStats('mis');
+$('btnCloseStats').onclick=()=>showLobby();
+document.querySelectorAll('.statTab').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.statTab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    showStats(btn.dataset.tab);
+  };
+});
+
+async function saveMatchResult({mode,won,myChar,oppUid,oppName,oppChar}){
+  if(!currentUser)return;
+  const uid=currentUser.uid;
+  const name=currentUser.displayName||'?';
+  const pts=won?(mode==='online'?3:1):0;
+  // mis stats
+  const myStatsRef=ref(db,`stats/${uid}/${mode}`);
+  await runTransaction(myStatsRef,cur=>{
+    const c=cur||{wins:0,losses:0,pts:0,chars:{}};
+    if(won)c.wins=(c.wins||0)+1;else c.losses=(c.losses||0)+1;
+    c.pts=(c.pts||0)+pts;
+    if(myChar){c.chars=c.chars||{};c.chars[myChar]=(c.chars[myChar]||0)+1;}
+    return c;
+  });
+  // leaderboard
+  if(pts>0){
+    const lb=mode==='online'?'leaderboard_online':'leaderboard_cpu';
+    const lbRef=ref(db,`${lb}/${uid}`);
+    await runTransaction(lbRef,cur=>{
+      const c=cur||{name,pts:0};
+      c.name=name;c.pts=(c.pts||0)+pts;return c;
+    });
+  }
+  // h2h (solo online)
+  if(mode==='online'&&oppUid){
+    const key=[uid,oppUid].sort().join('_');
+    const h2hRef=ref(db,`h2h/${key}`);
+    await runTransaction(h2hRef,cur=>{
+      const c=cur||{};
+      // guardar nombres
+      c[uid]={name,wins:(c[uid]?.wins||0)+(won?1:0)};
+      c[oppUid]={name:oppName||'?',wins:(c[oppUid]?.wins||0)+(won?0:1)};
+      return c;
+    });
+  }
+}
+
+async function showStats(tab){
+  showScreen('statsScreen');
+  document.querySelectorAll('.statTab').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`.statTab[data-tab="${tab}"]`)?.classList.add('active');
+  const el=$('statsContent');
+  el.innerHTML='<p class="noData">Cargando...</p>';
+  const uid=currentUser?.uid;
+  if(!uid)return;
+
+  if(tab==='mis'){
+    const [snapO,snapC]=await Promise.all([get(ref(db,`stats/${uid}/online`)),get(ref(db,`stats/${uid}/cpu`))]);
+    const o=snapO.val()||{wins:0,losses:0,pts:0,chars:{}};
+    const c=snapC.val()||{wins:0,losses:0,pts:0,chars:{}};
+    const ratio=(mode,d)=>{const t=(d.wins||0)+(d.losses||0);return t===0?'—':((d.wins||0)/t*100).toFixed(0)+'%';};
+    const bestChar=(d)=>{const ch=d.chars||{};const keys=Object.keys(ch);if(!keys.length)return'—';return keys.sort((a,b)=>ch[b]-ch[a])[0].toUpperCase();};
+    el.innerHTML=`
+      <div class="statBox">
+        <h3>🌐 ONLINE</h3>
+        <div class="statRow"><span class="statLbl">Victorias</span><span class="statVal green">${o.wins||0}</span></div>
+        <div class="statRow"><span class="statLbl">Derrotas</span><span class="statVal red">${o.losses||0}</span></div>
+        <div class="statRow"><span class="statLbl">Ratio</span><span class="statVal">${ratio('online',o)}</span></div>
+        <div class="statRow"><span class="statLbl">Puntos</span><span class="statVal gold">${o.pts||0} pts</span></div>
+        <div class="statRow"><span class="statLbl">Personaje favorito</span><span class="statVal">${bestChar(o)}</span></div>
+      </div>
+      <div class="statBox">
+        <h3>🤖 VS CPU</h3>
+        <div class="statRow"><span class="statLbl">Victorias</span><span class="statVal green">${c.wins||0}</span></div>
+        <div class="statRow"><span class="statLbl">Derrotas</span><span class="statVal red">${c.losses||0}</span></div>
+        <div class="statRow"><span class="statLbl">Ratio</span><span class="statVal">${ratio('cpu',c)}</span></div>
+        <div class="statRow"><span class="statLbl">Puntos</span><span class="statVal gold">${c.pts||0} pts</span></div>
+        <div class="statRow"><span class="statLbl">Personaje favorito</span><span class="statVal">${bestChar(c)}</span></div>
+      </div>`;
+
+  } else if(tab==='rivales'){
+    const snap=await get(ref(db,'h2h'));
+    const all=snap.val()||{};
+    const myMatches=Object.values(all).filter(m=>m[uid]);
+    if(!myMatches.length){el.innerHTML='<p class="noData">Todavía no jugaste contra nadie</p>';return;}
+    const rows=myMatches.map(m=>{
+      const me=m[uid]||{wins:0};
+      const oppKey=Object.keys(m).find(k=>k!==uid);
+      const opp=m[oppKey]||{name:'?',wins:0};
+      const total=(me.wins||0)+(opp.wins||0);
+      const color=me.wins>opp.wins?'green':me.wins<opp.wins?'red':'';
+      return `<div class="h2hRow">
+        <span class="h2hName">${opp.name||'?'}</span>
+        <span class="h2hScore" style="color:${color==='green'?'#7fff7f':color==='red'?'#ff7f7f':'#fff'}">${me.wins||0} — ${opp.wins||0}</span>
+      </div>`;
+    }).join('');
+    el.innerHTML=`<div class="statBox"><h3>⚔️ HISTORIAL CONTRA RIVALES</h3>${rows}</div>`;
+
+  } else if(tab==='top'){
+    const [snapO,snapC]=await Promise.all([
+      get(query(ref(db,'leaderboard_online'),orderByChild('pts'),limitToLast(10))),
+      get(query(ref(db,'leaderboard_cpu'),orderByChild('pts'),limitToLast(10)))
+    ]);
+    const buildTable=(snap,title)=>{
+      const d=snap.val();
+      if(!d)return`<div class="statBox"><h3>${title}</h3><p class="noData">Sin datos aún</p></div>`;
+      const sorted=Object.entries(d).sort((a,b)=>b[1].pts-a[1].pts);
+      const rows=sorted.map(([id,v],i)=>{
+        const isMe=id===uid;
+        const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+        return`<div class="topRow${isMe?' me':''}">
+          <span class="topRank">${medal||i+1}</span>
+          <span class="topName">${v.name||'?'}${isMe?' (vos)':''}</span>
+          <span class="topPts">${v.pts||0} pts</span>
+        </div>`;
+      }).join('');
+      return`<div class="statBox"><h3>${title}</h3>${rows}</div>`;
+    };
+    el.innerHTML=buildTable(snapO,'🌐 TOP 10 ONLINE')+buildTable(snapC,'🤖 TOP 10 VS CPU');
+  }
+}
 
 // ── AUTH ─────────────────────────────────────────────────────────
 let currentUser=null,myRole=null,roomCode=null,roomRef=null,vsMode=null;
@@ -233,7 +396,15 @@ $('btnCreate').onclick=async()=>{
     myRole='host';vsMode='online';
     $('waitTitle').textContent='Compartí el código';$('displayCode').textContent=roomCode;$('displayCode').style.display='block';$('waitMsg').textContent='Esperando al rival...';
     showScreen('waitingScreen');
-    const unsub=onValue(roomRef,snap=>{const d=snap.val();if(!d)return;if(d.status==='ready'&&d.guest){unsub();startGame();}});
+    const unsub=onValue(roomRef,snap=>{
+      const d=snap.val();if(!d)return;
+      if(d.status==='ready'&&d.guest){
+        unsub();
+        // guardar uid/nombre del guest para stats
+        if(!gs)gs={};gs._guestUid=d.guest;gs._guestName=d.guestName;
+        startGame();
+      }
+    });
   }catch(e){err('Error: '+e.message);}
 };
 window._join=async code=>{
@@ -244,6 +415,11 @@ window._join=async code=>{
     const d=snap.val();if(d.status!=='waiting'){err('Sala ya en juego');return;}
     await update(roomRef,{guest:currentUser.uid,guestName:currentUser.displayName||'Guest',status:'ready'});
     onDisconnect(roomRef).remove();
+    myRole='guest';vsMode='online';
+    // guardar uid/nombre del host para stats
+    const hostSnap=await get(roomRef);
+    const hd=hostSnap.val()||{};
+    if(!gs)gs={};gs._hostUid=hd.host;gs._hostName=hd.hostName;
     myRole='guest';vsMode='online';
     $('waitTitle').textContent='Uniéndose...';$('displayCode').style.display='none';$('waitMsg').textContent='Conectando...';
     showScreen('waitingScreen');startGame();
@@ -437,12 +613,17 @@ function updateKO(){
       gs[s.winner].wiggle=0;
       // Detener el loop antes de mostrar la pantalla
       if(window._gInt){clearInterval(window._gInt);window._gInt=null;}
+    if(s.t>240){
+      s.phase='done';gs[s.winner].wiggle=0;
+      if(window._gInt){clearInterval(window._gInt);window._gInt=null;}
+      // Guardar estadísticas
+      const iWon=(vsMode==='cpu'&&s.winner==='p1')||(vsMode==='online'&&((myRole==='host'&&s.winner==='p1')||(myRole==='guest'&&s.winner==='p2')));
+      const myChar=myRole==='host'||vsMode==='cpu'?SP._p1def?.key:SP._p2def?.key;
+      const oppChar=myRole==='host'||vsMode==='cpu'?SP._p2def?.key:SP._p1def?.key;
+      saveMatchResult({mode:vsMode==='cpu'?'cpu':'online',won:iWon,myChar,oppUid:vsMode==='online'?(myRole==='host'?gs._guestUid:gs._hostUid):null,oppName:vsMode==='online'?(myRole==='host'?gs._guestName:gs._hostName):null,oppChar}).catch(console.error);
       SFX.win();stopMusic();
-      setTimeout(()=>{
-        hideCanvas();
-        showWinScreen(s.winnerName+' WINS!');
-        koSeq=null;
-      },500);
+      setTimeout(()=>{hideCanvas();showWinScreen(s.winnerName+' WINS!');koSeq=null;},500);
+    }
     }
   }
 }
