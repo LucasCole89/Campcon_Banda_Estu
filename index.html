@@ -101,43 +101,27 @@ canvas{display:block;touch-action:none;}
 .statsBody{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0;}
 .statsBody::-webkit-scrollbar{width:4px;}
 .statsBody::-webkit-scrollbar-thumb{background:rgba(0,200,116,0.3);border-radius:2px;}
-
-/* Top 10 table */
 .leaderTable{width:100%;border-collapse:collapse;}
 .leaderTable th{font-size:8px;color:#00c874;letter-spacing:2px;padding:4px 8px;text-align:left;border-bottom:1px solid rgba(0,200,116,0.2);}
 .leaderTable td{font-size:10px;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.04);}
 .leaderTable tr:hover td{background:rgba(255,255,255,0.04);}
 .rankBadge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:9px;font-weight:900;}
-.rank1{background:#FFD700;color:#000;}
-.rank2{background:#C0C0C0;color:#000;}
-.rank3{background:#cd7f32;color:#fff;}
-.rankN{background:rgba(255,255,255,0.1);color:#aaa;}
-.pctWin{color:#00c874;font-size:9px;}
-.pctLoss{color:#ff4444;font-size:9px;}
-
-/* H2H */
+.rank1{background:#FFD700;color:#000;}.rank2{background:#C0C0C0;color:#000;}.rank3{background:#cd7f32;color:#fff;}.rankN{background:rgba(255,255,255,0.1);color:#aaa;}
+.pctWin{color:#00c874;font-size:9px;}.pctLoss{color:#ff4444;font-size:9px;}
 .h2hList{display:flex;flex-direction:column;gap:6px;}
 .h2hCard{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;}
-.h2hNames{font-size:10px;color:#ddd;flex:1;}
-.h2hNames .opp{color:#00ccff;}
 .h2hScore{display:flex;gap:8px;align-items:center;}
 .h2hScore .myW{color:#00c874;font-size:14px;font-weight:900;}
 .h2hScore .sep{color:#555;font-size:10px;}
 .h2hScore .oppW{color:#ff4444;font-size:14px;font-weight:900;}
-.h2hTotal{font-size:8px;color:#555;text-align:right;}
-
-/* Individual stats */
 .myStatsGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .myStatCard{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;}
 .myStatCard h4{font-size:8px;letter-spacing:2px;color:#aaa;margin-bottom:2px;}
 .myStatBig{font-size:28px;font-weight:900;line-height:1;}
 .myStatSub{font-size:8px;color:#666;}
 .myStatRow{display:flex;justify-content:space-between;align-items:center;font-size:9px;}
-.myStatRow .lbl{color:#888;}
-.myStatRow .val{font-weight:900;}
-.statGreen{color:#00c874;}
-.statRed{color:#ff4444;}
-.statGold{color:#FFD700;}
+.myStatRow .lbl{color:#888;}.myStatRow .val{font-weight:900;}
+.statGreen{color:#00c874;}.statRed{color:#ff4444;}.statGold{color:#FFD700;}
 .stLoading{font-size:10px;color:#555;text-align:center;padding:20px;letter-spacing:2px;}
 .stEmpty{font-size:10px;color:#444;text-align:center;padding:30px;letter-spacing:1px;}
 </style>
@@ -163,11 +147,13 @@ canvas{display:block;touch-action:none;}
       <div class="menuCard cardStats" id="cardStats"><div class="icon">📊</div><div class="lbl">STATS</div></div>
     </div>
     <button class="btn btnLogout" id="btnLogout">Cerrar sesión</button>
-    <div style="font-size:8px;color:rgba(255,255,255,0.2);font-family:monospace;">v0.23</div>
+    <div style="font-size:8px;color:rgba(255,255,255,0.2);font-family:monospace;">v0.24-rtc</div>
   </div>
   <div class="lobbyRight">
     <div class="rightPanel" id="panelCPU" style="display:none;align-items:center;justify-content:center;">
-      <h3>VS CPU</h3><button class="btn btnCPU" id="btnCPU">⚡ JUGAR AHORA</button>
+      <h3>VS CPU</h3>
+      <button class="btn btnCPU" id="btnCPU">⚡ JUGAR AHORA</button>
+      <p id="cpuLoadMsg" style="display:none;font-size:9px;color:#aaa;letter-spacing:2px;margin-top:8px;">CARGANDO PERSONAJES...</p>
     </div>
     <div class="rightPanel" id="panelOnline" style="display:none;">
       <h3>🌐 MULTIJUGADOR</h3>
@@ -179,21 +165,15 @@ canvas{display:block;touch-action:none;}
   <p id="errMsg"></p>
 </div>
 
-<!-- ── STATS SCREEN ─────────────────────────────────────── -->
 <div class="screen hidden" id="statsScreen">
   <div class="statsWrap">
-    <div class="statsHeader">
-      <h2>📊 ESTADÍSTICAS</h2>
-      <button class="btnCloseStats" id="btnCloseStats">✕ CERRAR</button>
-    </div>
+    <div class="statsHeader"><h2>📊 ESTADÍSTICAS</h2><button class="btnCloseStats" id="btnCloseStats">✕ CERRAR</button></div>
     <div class="statsTabs">
       <button class="stTab active" id="tabTop10" onclick="switchStatsTab('top10')">🏆 TOP 10 ONLINE</button>
       <button class="stTab" id="tabH2H" onclick="switchStatsTab('h2h')">🤜 HISTORIAL H2H</button>
       <button class="stTab" id="tabMe" onclick="switchStatsTab('me')">👤 MIS STATS</button>
     </div>
-    <div class="statsBody" id="statsBody">
-      <p class="stLoading">CARGANDO...</p>
-    </div>
+    <div class="statsBody" id="statsBody"><p class="stLoading">CARGANDO...</p></div>
   </div>
 </div>
 
@@ -280,7 +260,11 @@ $('cardCPU').onclick=()=>{$('panelCPU').style.display='flex';$('panelOnline').st
 $('cardOnline').onclick=()=>{$('panelOnline').style.display='flex';$('panelCPU').style.display='none';$('cardOnline').classList.add('active');$('cardCPU').classList.remove('active');$('cardStats').classList.remove('active');startSalas();};
 $('cardStats').onclick=()=>{$('cardStats').classList.add('active');$('cardCPU').classList.remove('active');$('cardOnline').classList.remove('active');openStats();};
 $('btnRefresh').onclick=startSalas;
-$('btnCPU').onclick=()=>{myRole='host';vsMode='cpu';roomCode=null;roomRef=null;startGame();};
+$('btnCPU').onclick=()=>{
+  myRole='host';vsMode='cpu';roomCode=null;roomRef=null;
+  $('btnCPU').disabled=true;$('cpuLoadMsg').style.display='block';
+  startGame().finally(()=>{$('btnCPU').disabled=false;$('cpuLoadMsg').style.display='none';});
+};
 
 let salasUnsub=null;
 function stopSalas(){if(salasUnsub){salasUnsub();salasUnsub=null;}}
@@ -289,8 +273,7 @@ function startSalas(){
   const el=$('salasList');if(el)el.innerHTML='<p class="noSalas">Buscando...</p>';
   salasUnsub=onValue(ref(db,'rooms'),snap=>{
     const el2=$('salasList');if(!el2)return;
-    const d=snap.val();
-    if(!d){el2.innerHTML='<p class="noSalas">No hay salas</p>';return;}
+    const d=snap.val();if(!d){el2.innerHTML='<p class="noSalas">No hay salas</p>';return;}
     const uid=currentUser?.uid,now=Date.now();
     const ab=Object.entries(d).filter(([k,v])=>v&&v.status==='waiting'&&v.host!==uid&&(!v.createdAt||now-v.createdAt<600000));
     if(!ab.length){el2.innerHTML='<p class="noSalas">No hay salas abiertas</p>';return;}
@@ -298,7 +281,115 @@ function startSalas(){
   },e=>{const el2=$('salasList');if(el2)el2.innerHTML='<p class="noSalas">Error: '+e.code+'</p>';});
 }
 
+// ══════════════════════════════════════════════════════════════════
+// ── WEBRTC ───────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+let pc=null,dc=null;
+const RTC_CFG={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
+
+function closeRTC(){
+  try{if(dc){dc.close();dc=null;}}catch(e){}
+  try{if(pc){pc.close();pc=null;}}catch(e){}
+  if(roomCode)remove(ref(db,`signals/${roomCode}`)).catch(()=>{});
+}
+
+// Acumular ICE candidates y enviarlos al completar gathering (o tras timeout)
+function setupICE(role){
+  const iceBuf=[];
+  const iceKey=`signals/${roomCode}/${role==='host'?'hice':'gice'}`;
+  const flush=()=>{if(iceBuf.length)set(ref(db,iceKey),iceBuf).catch(()=>{});};
+  pc.onicecandidate=e=>{if(e.candidate)iceBuf.push(e.candidate.toJSON());};
+  pc.onicegatheringstatechange=()=>{if(pc.iceGatheringState==='complete')flush();};
+  setTimeout(flush,4000); // fallback: si tarda mucho, manda lo que hay
+}
+
+// Escuchar ICE candidates del otro lado y agregarlos
+function listenICE(role){
+  const iceKey=`signals/${roomCode}/${role==='host'?'hice':'gice'}`;
+  const added=new Set();
+  onValue(ref(db,iceKey),snap=>{
+    const cs=snap.val();if(!cs||!pc)return;
+    cs.forEach((c,i)=>{
+      if(added.has(i))return;added.add(i);
+      pc.addIceCandidate(new RTCIceCandidate(c)).catch(()=>{});
+    });
+  });
+}
+
+function setupDC(channel){
+  channel.onopen=()=>{
+    dbg('⚡ WebRTC conectado!');
+    $('waitMsg').textContent='¡Conectado! Cargando personajes...';
+    startGame();
+  };
+  channel.onmessage=e=>{
+    if(!gs)return;
+    try{
+      const d=JSON.parse(e.data);
+      if(myRole==='guest'){
+        // Recibir estado completo del host
+        applyHostState(d);
+      } else {
+        // Recibir input del guest
+        if(d.inp){
+          lastOppInp.left=!!d.inp.left;lastOppInp.right=!!d.inp.right;
+          lastOppInp.jump=!!d.inp.jump;lastOppInp.attack=!!d.inp.attack;
+          lastOppInp.block=!!d.inp.block;lastOppInp.special=!!d.inp.special;
+        }
+      }
+    }catch(err){}
+  };
+  channel.onerror=e=>console.error('DC err',e);
+  channel.onclose=()=>dbg('RTC cerrado');
+}
+
+async function initRTC_Host(){
+  pc=new RTCPeerConnection(RTC_CFG);
+  // Canal unreliable = más rápido, no espera retransmisiones (como UDP)
+  dc=pc.createDataChannel('g',{ordered:false,maxRetransmits:0});
+  setupDC(dc);
+  setupICE('host');
+  listenICE('guest'); // escuchar ICE del guest
+
+  // Escuchar answer del guest
+  onValue(ref(db,`signals/${roomCode}/answer`),async snap=>{
+    const a=snap.val();if(!a||!pc||pc.remoteDescription)return;
+    try{await pc.setRemoteDescription(new RTCSessionDescription(a));}catch(e){console.warn('setRemoteDesc err',e);}
+  });
+
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await set(ref(db,`signals/${roomCode}/offer`),{sdp:offer.sdp,type:offer.type});
+  dbg('Oferta RTC creada, esperando rival...');
+}
+
+async function initRTC_Guest(){
+  pc=new RTCPeerConnection(RTC_CFG);
+  pc.ondatachannel=e=>{dc=e.channel;setupDC(dc);};
+  setupICE('guest');
+  listenICE('host'); // escuchar ICE del host
+
+  // Esperar que aparezca la offer (puede que el host tarde un poco)
+  await new Promise((res,rej)=>{
+    const t=setTimeout(()=>rej(new Error('Timeout esperando oferta')),10000);
+    const unsub=onValue(ref(db,`signals/${roomCode}/offer`),async snap=>{
+      const offer=snap.val();if(!offer)return;
+      unsub();clearTimeout(t);
+      try{
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer=await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await set(ref(db,`signals/${roomCode}/answer`),{sdp:answer.sdp,type:answer.type});
+        dbg('Answer RTC enviado');
+        res();
+      }catch(e){rej(e);}
+    });
+  });
+}
+// ══════════════════════════════════════════════════════════════════
+
 function genCode(){return Math.random().toString(36).substr(2,4).toUpperCase();}
+
 $('btnCreate').onclick=async()=>{
   if(!currentUser)return;
   try{
@@ -306,11 +397,16 @@ $('btnCreate').onclick=async()=>{
     await set(roomRef,{host:currentUser.uid,hostName:currentUser.displayName||'Host',guest:null,status:'waiting',createdAt:Date.now(),hostChar:null,guestChar:null,guestReady:false,hostReady:false,stage:null,fightStartAt:null});
     onDisconnect(roomRef).remove();
     myRole='host';vsMode='online';
-    $('waitTitle').textContent='Compartí el código';$('displayCode').textContent=roomCode;$('displayCode').style.display='block';$('waitMsg').textContent='Esperando al rival...';
+    $('waitTitle').textContent='Compartí el código';
+    $('displayCode').textContent=roomCode;$('displayCode').style.display='block';
+    $('waitMsg').textContent='Conectando WebRTC...';
     showScreen('waitingScreen');
-    const unsub=onValue(roomRef,snap=>{const d=snap.val();if(!d)return;if(d.status==='ready'&&d.guest){unsub();startGame();}});
-  }catch(e){err('Error: '+e.message);}
+    // Iniciar WebRTC — el juego arranca cuando dc.onopen dispara startGame()
+    await initRTC_Host();
+    $('waitMsg').textContent='Esperando al rival...';
+  }catch(e){err('Error: '+e.message);console.error(e);}
 };
+
 window._join=async code=>{
   if(!currentUser)return;
   try{
@@ -320,11 +416,21 @@ window._join=async code=>{
     await update(roomRef,{guest:currentUser.uid,guestName:currentUser.displayName||'Guest',status:'ready'});
     onDisconnect(roomRef).remove();
     myRole='guest';vsMode='online';
-    $('waitTitle').textContent='Uniéndose...';$('displayCode').style.display='none';$('waitMsg').textContent='Conectando...';
-    showScreen('waitingScreen');startGame();
-  }catch(e){err('Error: '+e.message);}
+    $('waitTitle').textContent='Conectando...';
+    $('displayCode').style.display='none';
+    $('waitMsg').textContent='Estableciendo conexión P2P...';
+    showScreen('waitingScreen');
+    // Iniciar WebRTC — el juego arranca cuando dc.onopen dispara startGame()
+    await initRTC_Guest();
+    $('waitMsg').textContent='Esperando confirmación...';
+  }catch(e){err('Error: '+e.message);console.error(e);}
 };
-$('btnCancel').onclick=async()=>{if(roomRef){await remove(roomRef);roomRef=null;}roomCode=null;myRole=null;vsMode=null;showLobby();};
+
+$('btnCancel').onclick=async()=>{
+  closeRTC();
+  if(roomRef){await remove(roomRef);roomRef=null;}
+  roomCode=null;myRole=null;vsMode=null;showLobby();
+};
 
 // ── SPRITES ──────────────────────────────────────────────────────
 const SP={};let spritesLoaded=false;
@@ -347,17 +453,14 @@ async function loadSprites(){
   SP.bg=SP.stages.estudiantil;spritesLoaded=true;dbg('Sprites OK');
 }
 
-// ── CANVAS ───────────────────────────────────────────────────────
 const canvas=$('c'),ctx=canvas.getContext('2d');
 function resize(){const dpr=window.devicePixelRatio||1,s=Math.min(innerWidth/W,innerHeight/H);canvas.style.width=s*W+'px';canvas.style.height=s*H+'px';canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
 resize();window.addEventListener('resize',resize);
 
-// ── STATE ────────────────────────────────────────────────────────
 let gs,fTimer,hitCD,inv,bgOffset,frameCount,specialPhase,timerInt,myKey,oppKey,koSeq,countdown;
 let wins={p1:0,p2:0},currentRound=1,roundBanner=null;
 const emptyInp=()=>({left:false,right:false,jump:false,attack:false,block:false,special:false});
 let myInput=emptyInp(),lastOppInp=emptyInp();
-let inputRef=null,oppInputRef=null,stateRef=null;
 
 function initRound(){
   gs={p1:{x:W*0.28,y:FLOOR,vy:0,hp:100,hp2:100,special:0,state:'idle',frame:0,facing:1,blocking:false,grounded:true,_attackHit:false,_airAtk:null,wiggle:0},p2:{x:W*0.72,y:FLOOR,vy:0,hp:100,hp2:100,special:0,state:'idle',frame:0,facing:-1,blocking:false,grounded:true,_attackHit:false,_airAtk:null,wiggle:0},timer:90,phase:'fight'};
@@ -365,16 +468,13 @@ function initRound(){
   myInput=emptyInp();lastOppInp=emptyInp();
 }
 function initGS(){wins={p1:0,p2:0};currentRound=1;roundBanner=null;initRound();}
-
 function getSP(pk){return pk==='p1'?SP._p1:SP._p2;}
 function getFrames(pk,st){const s=getSP(pk),state=st||gs[pk].state;if(state==='attack'&&gs[pk]?._airAtk)return s[gs[pk]._airAtk]||s.attack||[];return s[{idle:'idle',walk:'walk',jump:'jump',attack:'attack',special:'special',block:'block',hurt:'hurt',ko:'ko',defeated:'defeated',celeb:'celeb'}[state]||'idle']||[];}
 
-// ── DRAW ─────────────────────────────────────────────────────────
 function drawBg(){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);if(SP.bg){const bW=W*1.4;ctx.drawImage(SP.bg,-bgOffset*(bW-W),0,bW,FLOOR);}else{const g=ctx.createLinearGradient(0,0,0,FLOOR);g.addColorStop(0,'#0d1b2a');g.addColorStop(1,'#c8a060');ctx.fillStyle=g;ctx.fillRect(0,0,W,FLOOR);}ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,FLOOR);ctx.lineTo(W,FLOOR);ctx.stroke();}
 function drawSprAt(img,x,y,fh,facing,tint,wiggle){if(!img)return;const dw=img.width*(fh/img.height),wx=wiggle?Math.sin(Date.now()*0.05)*5:0,wy=wiggle?Math.abs(Math.sin(Date.now()*0.035))*-8:0;ctx.save();if(facing<0){ctx.translate(x+dw/2+wx,y-fh+wy);ctx.scale(-1,1);}else ctx.translate(x-dw/2+wx,y-fh+wy);if(tint){const oc=document.createElement('canvas');oc.width=dw;oc.height=fh;const ox=oc.getContext('2d');ox.drawImage(img,0,0,dw,fh);ox.globalCompositeOperation='source-atop';ox.fillStyle=tint;ox.fillRect(0,0,dw,fh);ctx.drawImage(oc,0,0,dw,fh);}else ctx.drawImage(img,0,0,dw,fh);ctx.restore();}
 function drawFighter(pk){const f=gs[pk],fh=pkFH(pk),frames=getFrames(pk);const img=frames[Math.min(f.frame,Math.max(0,frames.length-1))];const ox=(getSP(pk)===SP.mauron&&f.state==='attack'&&!f._airAtk)?(f.facing>0?20:-20):0;drawSprAt(img,f.x+ox,f.y,fh,f.facing,f.state==='hurt'?'rgba(255,0,0,0.5)':null,f.wiggle>0);if(f.blocking){ctx.save();ctx.globalAlpha=0.3;ctx.fillStyle='#4af';ctx.beginPath();ctx.ellipse(f.x+(f.facing>0?30:-30),f.y-fh/2,40,75,0,0,Math.PI*2);ctx.fill();ctx.restore();}}
 
-// ── HUD ──────────────────────────────────────────────────────────
 function drawHUD(){
   const bW=290,bH=14,gap=2,spH=7,y1=10,y2=y1+bH+gap,y3=y2+bH+gap;
   const bar=(x,pct,col,right,y)=>{ctx.fillStyle='#111';ctx.fillRect(x,y,bW,bH);const fw=bW*Math.max(0,Math.min(1,pct));ctx.fillStyle=col;ctx.fillRect(right?x+bW-fw:x,y,fw,bH);ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;ctx.strokeRect(x,y,bW,bH);};
@@ -397,7 +497,6 @@ const BTNS={L:{x:60,y:H-130,r:38},R:{x:148,y:H-130,r:38},UP:{x:104,y:H-210,r:38}
 function drawControls(){ctx.save();ctx.globalAlpha=0.6;const D=(b,lbl,c)=>{ctx.fillStyle=c;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${lbl.length>2?b.r*0.32:b.r*0.6}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(lbl,b.x,b.y);ctx.textBaseline='alphabetic';};D(BTNS.L,'◀','#223');D(BTNS.R,'▶','#223');D(BTNS.UP,'▲','#232');D(BTNS.P,'PUNCH','#332');D(BTNS.B,'BLOCK','#322');D(BTNS.S,'SPECIAL','#223');ctx.restore();}
 function drawCountdown(){if(!countdown)return;countdown.t++;ctx.save();ctx.fillStyle='rgba(0,0,0,0.75)';ctx.beginPath();ctx.arc(W/2,H/2,110,0,Math.PI*2);ctx.fill();ctx.fillStyle=countdown.n===0?'#00FF7F':'#FFD700';ctx.shadowColor=countdown.n===0?'#00FF7F':'#FF6600';ctx.shadowBlur=50;ctx.font='bold 130px Arial Black';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(countdown.n===0?'FIGHT!':String(countdown.n),W/2,H/2);ctx.shadowBlur=0;ctx.restore();}
 
-// ── SPECIAL ──────────────────────────────────────────────────────
 function applySpecialDmg(tKey,lKey,s){
   const target=gs[tKey];if(target.state==='ko')return;
   const lk=(lKey==='p1'?SP._p1def:SP._p2def)?.key;
@@ -471,7 +570,6 @@ function drawSpecialOverlay(){
   else if(lk==='mario'&&s.alfredInit){const alf=spSP?.specialModule||[],ai={enter:0,punch05:1,punch06:2,exit:3}[s.alfredPhase]||0,af=alf[ai];if(af){const ah=fhPk*0.95,aw=af.width*(ah/af.height);ctx.save();ctx.translate(s.alfredX,FLOOR);ctx.drawImage(af,-aw/2,-ah,aw,ah);ctx.restore();}}
 }
 
-// ── KO ───────────────────────────────────────────────────────────
 function startKO(loserKey,winnerKey){
   if(gs.phase==='ko')return;SFX.ko();
   const loser=gs[loserKey],dir=loser.x<gs[winnerKey].x?-1:1;
@@ -484,28 +582,22 @@ function startKO(loserKey,winnerKey){
 }
 function updateKO(){
   if(!koSeq)return;
-  // HOST: sigue pusheando durante la animación KO para que el guest lo reciba sí o sí
+  // Host sigue pusheando durante KO para que guest lo reciba
   if(vsMode==='online'&&myRole==='host'&&(koSeq.t<=6||koSeq.t%6===0))pushState();
   const s=koSeq,loser=gs[s.loser];
   if(s.phase==='flyback'){s.vx*=0.88;s.vy+=GR;loser.x+=s.vx;loser.y+=s.vy;if(loser.y>=FLOOR){loser.y=FLOOR;s.phase='floor';loser.state='defeated';loser.frame=0;s.t=0;}}
-  else if(s.phase==='floor'){s.t++;s.idleT++;if(s.idleT>40&&gs[s.winner].state==='idle'){gs[s.winner].state='celeb';gs[s.winner].frame=0;}if(s.t>60){if(s.matchWin){s.phase='celeb';s.t=0;}          else{currentRound++;roundBanner={text:'ROUND '+currentRound,t:0};koSeq=null;setTimeout(()=>{initRound();if(vsMode==='cpu'||myRole==='host')startTimer();},1500);}}}
+  else if(s.phase==='floor'){s.t++;s.idleT++;if(s.idleT>40&&gs[s.winner].state==='idle'){gs[s.winner].state='celeb';gs[s.winner].frame=0;}if(s.t>60){if(s.matchWin){s.phase='celeb';s.t=0;}else{currentRound++;roundBanner={text:'ROUND '+currentRound,t:0};koSeq=null;setTimeout(()=>{initRound();if(vsMode==='cpu'||myRole==='host')startTimer();},1500);}}}
   else if(s.phase==='celeb'){
     s.t++;const wdef=s.winner==='p1'?SP._p1def:SP._p2def;
     const special=wdef?.key==='yiyo'||wdef?.key==='mario';
-    s.celebFrameT++;    const dur=s.celebFrame<=1?18:5;
+    s.celebFrameT++;const dur=s.celebFrame<=1?18:5;
     if(s.celebFrameT>=dur){s.celebFrameT=0;if(special){if(s.celebFrame<2)s.celebFrame++;else s.celebFrame=s.celebFrame===2?3:2;}else{const cf=getFrames(s.winner,'celeb');s.celebFrame=(s.celebFrame+1)%cf.length;}}
     gs[s.winner].frame=s.celebFrame;gs[s.winner].wiggle=0;
     if(s.t>240){
       s.phase='done';gs[s.winner].wiggle=0;
       if(window._gInt){clearInterval(window._gInt);window._gInt=null;}
       SFX.win();stopMusic();
-      setTimeout(()=>{
-        hideCanvas();
-        // ── GUARDAR STATS ANTES DE MOSTRAR WIN SCREEN ──
-        saveMatchResult(s.winner,s.loser);
-        showWinScreen(s.winnerName+' WINS!');
-        koSeq=null;
-      },500);
+      setTimeout(()=>{hideCanvas();saveMatchResult(s.winner,s.loser);showWinScreen(s.winnerName+' WINS!');koSeq=null;},500);
     }
   }
 }
@@ -520,7 +612,6 @@ function drawKOOverlay(){
   }
 }
 
-// ── PHYSICS ──────────────────────────────────────────────────────
 function physicsTick(){
   ['p1','p2'].forEach(pk=>{
     const p=gs[pk];if(['ko','defeated'].includes(p.state))return;
@@ -540,7 +631,6 @@ function physicsTick(){
   bgOffset=Math.max(0,Math.min(1,((gs.p1.x+gs.p2.x)/2-W*0.35)/(W*0.3)));
 }
 
-// ── INPUT ────────────────────────────────────────────────────────
 function applyInput(pk,inp){
   const p=gs[pk];if(['ko','defeated','special'].includes(p.state))return;
   const ok=pk==='p1'?'p2':'p1',opp=gs[ok];
@@ -569,11 +659,9 @@ function applyInput(pk,inp){
   if(inp.special&&p.special>=SPMAX&&!['hurt','ko','defeated','special'].includes(p.state)){p.special=0;p.state='special';p.frame=0;gs.phase='special';specialPhase={pk,ok,t:0,damageDealt:false,plantX:p.x+(p.facing>0?220:-220),frozenOpp:null,oppHit:false,oppWiggle:0,holdStarted:false,holdT:0,catX:undefined,catFi:0,catFrameT:0,alfredInit:false,alfredX:-80,alfredPhase:'enter',alfredT:0};SFX.special();}
 }
 
-// ── CPU ──────────────────────────────────────────────────────────
 let cpuTk=0;const cpuInp=emptyInp();
 function updateCPU(){const cpu=gs.p2,pl=gs.p1;if(['ko','defeated'].includes(cpu.state))return;cpuTk++;const dist=Math.abs(cpu.x-pl.x);Object.keys(cpuInp).forEach(k=>cpuInp[k]=false);if(dist>140){cpuInp.left=cpu.x>pl.x;cpuInp.right=cpu.x<pl.x;}if(dist<130&&cpuTk%30===0){if(cpu.special>=SPMAX&&Math.random()<0.2)cpuInp.special=true;else cpuInp.attack=true;}if(Math.random()<0.006&&cpu.grounded)cpuInp.jump=true;if(pl.state==='attack'&&dist<150&&Math.random()<0.3)cpuInp.block=true;}
 
-// ── GAME TICK ────────────────────────────────────────────────────
 function gameTick(){
   if(!gs||gs.phase==='countdown')return;
   if(koSeq&&koSeq.phase!=='done'){updateKO();return;}
@@ -586,56 +674,60 @@ function gameTick(){
       if(specialPhase){const lk=(specialPhase.pk==='p1'?SP._p1def:SP._p2def)?.key;if(lk==='yiyo'||lk==='mario')tickSpecialNoFreeze();}
       if(frameCount%2===0)pushState();
     }
+    // Guest: física viene del host vía WebRTC (applyHostState)
   }
   frameCount++;
 }
 
-// ── ONLINE SYNC ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// ── SYNC: reemplaza Firebase onValue/set con WebRTC DataChannel ──
+// ══════════════════════════════════════════════════════════════════
 function setupSync(){
-  if(vsMode!=='online')return;
-  inputRef=ref(db,`rooms/${roomCode}/inp/${myRole}`);
-  const oppRole=myRole==='host'?'guest':'host';
-  oppInputRef=ref(db,`rooms/${roomCode}/inp/${oppRole}`);
-  stateRef=ref(db,`rooms/${roomCode}/gstate`);
-  if(myRole==='host'){
-    onValue(oppInputRef,snap=>{const d=snap.val();if(!d)return;lastOppInp.left=!!d.left;lastOppInp.right=!!d.right;lastOppInp.jump=!!d.jump;lastOppInp.attack=!!d.attack;lastOppInp.block=!!d.block;lastOppInp.special=!!d.special;});
-  } else {
-    onValue(stateRef,snap=>{
-      const d=snap.val();if(!d||!gs)return;
-      if(koSeq&&koSeq.phase!=='done')return;
-      const apply=(pk,sd)=>{if(!sd)return;const p=gs[pk];p.x=sd.x;p.y=sd.y;p.vy=sd.vy;p.hp=sd.hp;p.hp2=sd.hp2;p.special=sd.sp;p.state=sd.st;p.frame=sd.fr;p.facing=sd.fa;p.blocking=!!sd.bl;p.grounded=!!sd.gr;p.wiggle=sd.wi||0;};
-      apply('p1',d.p1);apply('p2',d.p2);
-      if(typeof d.ti==='number')gs.timer=d.ti;
-      if(d.sp){
-        gs.phase='special';
-        if(!specialPhase){specialPhase={pk:d.sp.pk,ok:d.sp.ok,t:0,damageDealt:false,plantX:d.sp.px||0,frozenOpp:null,oppHit:false,oppWiggle:0,holdStarted:false,holdT:0,catX:undefined,catFi:0,catFrameT:0,alfredInit:false,alfredX:-80,alfredPhase:'enter',alfredT:0};}
-        specialPhase.t=d.sp.t||0;specialPhase.catX=typeof d.sp.cx==='number'?d.sp.cx:undefined;specialPhase.catFi=d.sp.cfi||0;specialPhase.alfredInit=!!d.sp.ai;specialPhase.alfredX=typeof d.sp.ax==='number'?d.sp.ax:-80;specialPhase.alfredPhase=d.sp.ap||'enter';specialPhase.holdStarted=!!d.sp.hs;specialPhase.damageDealt=!!d.sp.dd;specialPhase.plantX=d.sp.px||0;specialPhase.oppHit=!!d.sp.oh;
-        if(!specialPhase.frozenOpp&&d.sp.fo){specialPhase.frozenOpp={x:d.sp.fo.x,y:d.sp.fo.y,hp:d.sp.fo.hp,state:d.sp.fo.st,frame:d.sp.fo.fr,facing:d.sp.fo.fa};}
-      } else if(specialPhase){specialPhase=null;if(gs.phase==='special')gs.phase='fight';}
-      if(d.ko&&!koSeq&&gs.phase!=='ko'&&$('c').style.display!=='none'){
-        gs.phase='ko';clearInterval(timerInt);
-        wins[d.ko.winner]=(wins[d.ko.winner]||0)+1;
-        const wdef=d.ko.winner==='p1'?SP._p1def:SP._p2def;
-        const wuser=d.ko.winner==='p1'?currentUser?.displayName||'P1':'RIVAL';
-        koSeq={loser:d.ko.loser,winner:d.ko.winner,t:0,phase:'flyback',vx:(gs[d.ko.loser].x<gs[d.ko.winner].x?-1:1)*8,vy:-10,celebFrame:0,celebFrameT:0,idleT:0,winnerName:`${wdef?.name||d.ko.winner}\n(${wuser})`,matchWin:wins[d.ko.winner]>=2};
-        gs[d.ko.loser].state='ko';gs[d.ko.winner].state='idle';gs[d.ko.winner].frame=0;
-      }
-    });
-  }
+  // Con WebRTC el canal ya está abierto — los handlers están en setupDC().
+  // Esta función solo existe para compatibilidad con launchFight().
+  dbg('Sync via WebRTC DC activo');
 }
 
 let lastPushedInput='';
-function pushInputNow(){if(vsMode!=='online'||!inputRef)return;const s=JSON.stringify(myInput);if(s!==lastPushedInput){lastPushedInput=s;set(inputRef,{...myInput});}}
-function pushState(){
-  if(vsMode!=='online'||myRole!=='host'||!stateRef)return;
-  const pack=pk=>{const p=gs[pk];return{x:Math.round(p.x),y:Math.round(p.y),vy:+p.vy.toFixed(2),hp:p.hp,hp2:p.hp2,sp:p.special,st:p.state,fr:p.frame,fa:p.facing,bl:p.blocking?1:0,gr:p.grounded?1:0,wi:p.wiggle||0};};
-  const d={p1:pack('p1'),p2:pack('p2'),ti:Math.ceil(gs.timer)};
-  if(specialPhase){const fo=specialPhase.frozenOpp;d.sp={pk:specialPhase.pk,ok:specialPhase.ok,t:specialPhase.t,dd:specialPhase.damageDealt?1:0,px:Math.round(specialPhase.plantX||0),hs:specialPhase.holdStarted?1:0,ht:specialPhase.holdT||0,cx:typeof specialPhase.catX==='number'?specialPhase.catX:null,cfi:specialPhase.catFi||0,ai:specialPhase.alfredInit?1:0,ax:typeof specialPhase.alfredX==='number'?Math.round(specialPhase.alfredX):-80,ap:specialPhase.alfredPhase||'enter',at:specialPhase.alfredT||0,oh:specialPhase.oppHit?1:0,fo:fo?{x:Math.round(fo.x),y:Math.round(fo.y),hp:fo.hp,st:fo.state,fr:fo.frame,fa:fo.facing}:null};}
-  if(koSeq){d.ko={loser:koSeq.loser,winner:koSeq.winner,mw:koSeq.matchWin?1:0};}
-  set(stateRef,d);
+function pushInputNow(){
+  if(vsMode!=='online'||!dc||dc.readyState!=='open')return;
+  const s=JSON.stringify({inp:myInput});
+  if(s!==lastPushedInput){lastPushedInput=s;dc.send(s);}
 }
 
-// ── TIMER ────────────────────────────────────────────────────────
+function pushState(){
+  if(vsMode!=='online'||myRole!=='host'||!dc||dc.readyState!=='open')return;
+  const pack=pk=>{const p=gs[pk];return{x:Math.round(p.x),y:Math.round(p.y),vy:+p.vy.toFixed(2),hp:p.hp,hp2:p.hp2,sp:p.special,st:p.state,fr:p.frame,fa:p.facing,bl:p.blocking?1:0,gr:p.grounded?1:0,wi:p.wiggle||0};};
+  const d={p1:pack('p1'),p2:pack('p2'),ti:Math.ceil(gs.timer)};
+  if(specialPhase){const fo=specialPhase.frozenOpp;d.sp={pk:specialPhase.pk,ok:specialPhase.ok,t:specialPhase.t,dd:specialPhase.damageDealt?1:0,px:Math.round(specialPhase.plantX||0),hs:specialPhase.holdStarted?1:0,cx:typeof specialPhase.catX==='number'?specialPhase.catX:null,cfi:specialPhase.catFi||0,ai:specialPhase.alfredInit?1:0,ax:typeof specialPhase.alfredX==='number'?Math.round(specialPhase.alfredX):-80,ap:specialPhase.alfredPhase||'enter',oh:specialPhase.oppHit?1:0,fo:fo?{x:Math.round(fo.x),y:Math.round(fo.y),hp:fo.hp,st:fo.state,fr:fo.frame,fa:fo.facing}:null};}
+  if(koSeq){d.ko={loser:koSeq.loser,winner:koSeq.winner,mw:koSeq.matchWin?1:0};}
+  try{dc.send(JSON.stringify(d));}catch(e){}
+}
+
+// Aplicar estado recibido del host (guest side) — misma lógica que antes
+function applyHostState(d){
+  if(!gs)return;
+  if(koSeq&&koSeq.phase!=='done')return;
+  const apply=(pk,sd)=>{if(!sd)return;const p=gs[pk];p.x=sd.x;p.y=sd.y;p.vy=sd.vy;p.hp=sd.hp;p.hp2=sd.hp2;p.special=sd.sp;p.state=sd.st;p.frame=sd.fr;p.facing=sd.fa;p.blocking=!!sd.bl;p.grounded=!!sd.gr;p.wiggle=sd.wi||0;};
+  apply('p1',d.p1);apply('p2',d.p2);
+  if(typeof d.ti==='number')gs.timer=d.ti;
+  if(d.sp){
+    gs.phase='special';
+    if(!specialPhase){specialPhase={pk:d.sp.pk,ok:d.sp.ok,t:0,damageDealt:false,plantX:d.sp.px||0,frozenOpp:null,oppHit:false,oppWiggle:0,holdStarted:false,holdT:0,catX:undefined,catFi:0,catFrameT:0,alfredInit:false,alfredX:-80,alfredPhase:'enter',alfredT:0};}
+    specialPhase.t=d.sp.t||0;specialPhase.catX=typeof d.sp.cx==='number'?d.sp.cx:undefined;specialPhase.catFi=d.sp.cfi||0;specialPhase.alfredInit=!!d.sp.ai;specialPhase.alfredX=typeof d.sp.ax==='number'?d.sp.ax:-80;specialPhase.alfredPhase=d.sp.ap||'enter';specialPhase.holdStarted=!!d.sp.hs;specialPhase.damageDealt=!!d.sp.dd;specialPhase.plantX=d.sp.px||0;specialPhase.oppHit=!!d.sp.oh;
+    if(!specialPhase.frozenOpp&&d.sp.fo){specialPhase.frozenOpp={x:d.sp.fo.x,y:d.sp.fo.y,hp:d.sp.fo.hp,state:d.sp.fo.st,frame:d.sp.fo.fr,facing:d.sp.fo.fa};}
+  } else if(specialPhase){specialPhase=null;if(gs.phase==='special')gs.phase='fight';}
+  if(d.ko&&!koSeq&&gs.phase!=='ko'&&$('c').style.display!=='none'){
+    gs.phase='ko';clearInterval(timerInt);
+    wins[d.ko.winner]=(wins[d.ko.winner]||0)+1;
+    const wdef=d.ko.winner==='p1'?SP._p1def:SP._p2def;
+    const wuser=d.ko.winner==='p1'?currentUser?.displayName||'P1':'RIVAL';
+    koSeq={loser:d.ko.loser,winner:d.ko.winner,t:0,phase:'flyback',vx:(gs[d.ko.loser].x<gs[d.ko.winner].x?-1:1)*8,vy:-10,celebFrame:0,celebFrameT:0,idleT:0,winnerName:`${wdef?.name||d.ko.winner}\n(${wuser})`,matchWin:typeof d.ko.mw!=='undefined'?!!d.ko.mw:wins[d.ko.winner]>=2};
+    gs[d.ko.loser].state='ko';gs[d.ko.winner].state='idle';gs[d.ko.winner].frame=0;
+  }
+}
+// ══════════════════════════════════════════════════════════════════
+
 function startTimer(){
   clearInterval(timerInt);
   timerInt=setInterval(()=>{
@@ -647,7 +739,6 @@ function startTimer(){
   },1000);
 }
 
-// ── RENDER ───────────────────────────────────────────────────────
 function renderLoop(){
   ctx.clearRect(0,0,W,H);
   const slk=specialPhase?(specialPhase.pk==='p1'?SP._p1def:SP._p2def)?.key:null;
@@ -661,10 +752,17 @@ function renderLoop(){
 // ── CHAR SELECT ──────────────────────────────────────────────────
 let myCharChoice=null,oppCharChoice=null,selAnimId=null,selIdleFrame=0,selIdleTimer=0;
 function showSelectScreen(){
-  myCharChoice=null;oppCharChoice=null;$('btnFight').style.display='none';$('btnFight').disabled=false;$('selMsg').textContent=vsMode==='cpu'?'Elegí tu personaje':'Tocá el personaje que querés usar';
-  const grid=$('charGrid');grid.innerHTML='';CHARS.forEach((ch,i)=>{const card=document.createElement('div');card.className='charCard';card.id='sc'+i;card.innerHTML=`<canvas id="scv${i}" width="110" height="165"></canvas><div class="cname" style="color:${ch.color}">${ch.name}</div><div class="cspec">${ch.specialName.replace('\n',' ')}</div>`;card.addEventListener('click',()=>selectChar(i));grid.appendChild(card);});
+  myCharChoice=null;oppCharChoice=null;$('btnFight').style.display='none';$('btnFight').disabled=false;
+  $('selMsg').textContent=vsMode==='cpu'?'Elegí tu personaje':'Tocá el personaje que querés usar';
+  const grid=$('charGrid');grid.innerHTML='';
+  CHARS.forEach((ch,i)=>{const card=document.createElement('div');card.className='charCard';card.id='sc'+i;card.innerHTML=`<canvas id="scv${i}" width="110" height="165"></canvas><div class="cname" style="color:${ch.color}">${ch.name}</div><div class="cspec">${ch.specialName.replace('\n',' ')}</div>`;card.addEventListener('click',()=>selectChar(i));grid.appendChild(card);});
   showScreen('selectScreen');
-  if(vsMode==='online'&&myRole==='guest'){CHARS.forEach((_,i)=>{const c=$('sc'+i);if(c){c.style.opacity='0.35';c.style.pointerEvents='none';}});$('selMsg').textContent='Esperando que el rival elija...';const hcRef=ref(db,`rooms/${roomCode}/hostChar`);onValue(hcRef,snap=>{const hc=snap.val();if(!hc)return;off(hcRef);CHARS.forEach((c,i)=>{const card=$('sc'+i);if(!card)return;if(c.key!==hc){card.style.opacity='1';card.style.pointerEvents='auto';}else{card.style.opacity='0.25';card.style.pointerEvents='none';}});$('selMsg').textContent='¡Elegí tu personaje!';});}
+  if(vsMode==='online'&&myRole==='guest'){
+    CHARS.forEach((_,i)=>{const c=$('sc'+i);if(c){c.style.opacity='0.35';c.style.pointerEvents='none';}});
+    $('selMsg').textContent='Esperando que el rival elija...';
+    const hcRef=ref(db,`rooms/${roomCode}/hostChar`);
+    onValue(hcRef,snap=>{const hc=snap.val();if(!hc)return;off(hcRef);CHARS.forEach((c,i)=>{const card=$('sc'+i);if(!card)return;if(c.key!==hc){card.style.opacity='1';card.style.pointerEvents='auto';}else{card.style.opacity='0.25';card.style.pointerEvents='none';}});$('selMsg').textContent='¡Elegí tu personaje!';});
+  }
   if(selAnimId)cancelAnimationFrame(selAnimId);selIdleFrame=0;selIdleTimer=0;
   function anim(){selIdleTimer++;if(selIdleTimer>8){selIdleTimer=0;selIdleFrame++;}CHARS.forEach((ch,i)=>{const sc=$('scv'+i);if(!sc)return;const sx=sc.getContext('2d');sx.clearRect(0,0,110,165);const frames=SP[ch.key]?.idle||[];if(!frames.length)return;const img=frames[selIdleFrame%frames.length];if(!img)return;const sc2=CHAR_SCALE[ch.key]||1,h=165*sc2,w=img.width*(h/img.height);sx.drawImage(img,(110-w)/2,165-h,w,h);});selAnimId=requestAnimationFrame(anim);}
   selAnimId=requestAnimationFrame(anim);
@@ -687,7 +785,6 @@ $('btnFight').onclick=async()=>{
   showStageScreen();
 };
 
-// ── STAGE SELECT ─────────────────────────────────────────────────
 function showStageScreen(){
   const grid=$('stageGrid');grid.innerHTML='';STAGES.forEach(st=>{const card=document.createElement('div');card.className='stageCard';card.id='stg_'+st.key;card.innerHTML=`<canvas id="stgv_${st.key}" width="150" height="84"></canvas><div class="sname">${st.name}</div>`;card.addEventListener('click',()=>selectStage(st.key));grid.appendChild(card);requestAnimationFrame(()=>{const sc=$('stgv_'+st.key);if(!sc)return;const img=SP.stages[st.key];if(img){const sx=sc.getContext('2d');sx.drawImage(img,0,0,150,84);}});});
   showScreen('stageScreen');
@@ -706,7 +803,6 @@ function selectStage(key){
   update(roomRef,{stage:key,status:'playing',fightStartAt:Date.now()+2500});
 }
 
-// ── LAUNCH ───────────────────────────────────────────────────────
 function launchFight(){initGS();setupSync();setupTouch();showCanvas();startMusic();requestAnimationFrame(renderLoop);startCountdown();}
 function startCountdown(){
   gs.phase='countdown';countdown={n:3,t:0};
@@ -715,247 +811,78 @@ function startCountdown(){
   window._cdInt=setInterval(()=>{n--;if(n<0){clearInterval(window._cdInt);window._cdInt=null;countdown=null;gs.phase='fight';if(vsMode==='cpu'||myRole==='host')startTimer();dbg('FIGHT!');return;}countdown={n,t:0};resumeAC();playTone(n===0?1047:660,'sine',0.15,0.4);},1000);
 }
 
-// ── START GAME ───────────────────────────────────────────────────
 async function startGame(){
   dbg('startGame vsMode='+vsMode);
   try{await loadSprites();myKey=myRole==='host'?'p1':'p2';oppKey=myRole==='host'?'p2':'p1';showSelectScreen();}
   catch(e){dbg('ERROR: '+e.message);console.error(e);}
 }
 
-// ══════════════════════════════════════════════════════════════════
-// ── ESTADÍSTICAS ─────────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════
-
-// Guardar resultado de la partida terminada
-async function saveMatchResult(winnerPk, loserPk){
+// ── STATS ────────────────────────────────────────────────────────
+async function saveMatchResult(winnerPk,loserPk){
   if(!currentUser)return;
-  const uid=currentUser.uid;
-  const uName=currentUser.displayName||'???';
-  const uPhoto=currentUser.photoURL||'';
-
+  const uid=currentUser.uid,uName=currentUser.displayName||'???',uPhoto=currentUser.photoURL||'';
   if(vsMode==='cpu'){
     const iWon=(winnerPk==='p1');
-    const uRef=ref(db,`stats/users/${uid}`);
-    try{
-      await runTransaction(uRef,cur=>{
-        const d=cur||{n:uName,ph:uPhoto,wo:0,lo:0,wc:0,lc:0};
-        d.n=uName;d.ph=uPhoto;
-        if(iWon)d.wc=(d.wc||0)+1; else d.lc=(d.lc||0)+1;
-        return d;
-      });
-    }catch(e){console.warn('saveStats CPU error',e);}
+    await runTransaction(ref(db,`stats/users/${uid}`),cur=>{const d=cur||{n:uName,ph:uPhoto,wo:0,lo:0,wc:0,lc:0};d.n=uName;d.ph=uPhoto;if(iWon)d.wc=(d.wc||0)+1;else d.lc=(d.lc||0)+1;return d;}).catch(e=>console.warn('saveStats CPU',e));
     return;
   }
-
-  // Online: cada jugador escribe SUS PROPIAS stats (evita error de permisos)
-  const myPk=myRole==='host'?'p1':'p2';
-  const iWon=(winnerPk===myPk);
-  const uRef=ref(db,`stats/users/${uid}`);
-  try{
-    await runTransaction(uRef,cur=>{
-      const d=cur||{n:uName,ph:uPhoto,wo:0,lo:0,wc:0,lc:0};
-      d.n=uName;d.ph=uPhoto;
-      if(iWon)d.wo=(d.wo||0)+1; else d.lo=(d.lo||0)+1;
-      return d;
-    });
-  }catch(e){console.warn('saveStats online self',e);}
-
-  // Solo el host guarda el H2H (necesita los UIDs de ambos del roomRef)
+  const myPk=myRole==='host'?'p1':'p2',iWon=(winnerPk===myPk);
+  await runTransaction(ref(db,`stats/users/${uid}`),cur=>{const d=cur||{n:uName,ph:uPhoto,wo:0,lo:0,wc:0,lc:0};d.n=uName;d.ph=uPhoto;if(iWon)d.wo=(d.wo||0)+1;else d.lo=(d.lo||0)+1;return d;}).catch(e=>console.warn('saveStats online',e));
   if(myRole!=='host')return;
-  const snap=await get(roomRef).catch(()=>null);
-  const room=snap?.val();
-  if(!room)return;
-
-  const hostUid=room.host,hostName=room.hostName||'Host';
-  const guestUid=room.guest,guestName=room.guestName||'Guest';
+  const snap=await get(roomRef).catch(()=>null);const room=snap?.val();if(!room)return;
+  const hostUid=room.host,hostName=room.hostName||'Host',guestUid=room.guest,guestName=room.guestName||'Guest';
   if(!hostUid||!guestUid)return;
-
-  const hostWon=(winnerPk==='p1');
-  const h2hKey=[hostUid,guestUid].sort().join('_');
-  const h2hRef=ref(db,`stats/h2h/${h2hKey}`);
-  await runTransaction(h2hRef,cur=>{
-    const d=cur||{};
-    d[hostUid]=(d[hostUid]||0)+(hostWon?1:0);
-    d[guestUid]=(d[guestUid]||0)+(!hostWon?1:0);
-    d['n_'+hostUid]=hostName;
-    d['n_'+guestUid]=guestName;
-    return d;
-  }).catch(e=>console.warn('saveH2H',e));
+  const hostWon=(winnerPk==='p1'),h2hKey=[hostUid,guestUid].sort().join('_');
+  await runTransaction(ref(db,`stats/h2h/${h2hKey}`),cur=>{const d=cur||{};d[hostUid]=(d[hostUid]||0)+(hostWon?1:0);d[guestUid]=(d[guestUid]||0)+(!hostWon?1:0);d['n_'+hostUid]=hostName;d['n_'+guestUid]=guestName;return d;}).catch(e=>console.warn('saveH2H',e));
 }
 
-// ── ABRIR PANTALLA DE STATS ──────────────────────────────────────
 let currentStatsTab='top10';
 window.switchStatsTab=function(tab){
-  currentStatsTab=tab;
-  ['top10','h2h','me'].forEach(t=>{
-    $('tab'+t.charAt(0).toUpperCase()+t.slice(1))?.classList.remove('active');
-  });
-  const ids={top10:'tabTop10',h2h:'tabH2H',me:'tabMe'};
-  $(ids[tab])?.classList.add('active');
-  renderStatsTab(tab);
+  currentStatsTab=tab;['top10','h2h','me'].forEach(t=>{$('tab'+t.charAt(0).toUpperCase()+t.slice(1))?.classList.remove('active');});
+  const ids={top10:'tabTop10',h2h:'tabH2H',me:'tabMe'};$(ids[tab])?.classList.add('active');renderStatsTab(tab);
 };
-
-function openStats(){
-  currentStatsTab='top10';
-  ['tabTop10','tabH2H','tabMe'].forEach(id=>{$(id)?.classList.remove('active');});
-  $('tabTop10')?.classList.add('active');
-  showScreen('statsScreen');
-  renderStatsTab('top10');
-}
+function openStats(){currentStatsTab='top10';['tabTop10','tabH2H','tabMe'].forEach(id=>{$(id)?.classList.remove('active');});$('tabTop10')?.classList.add('active');showScreen('statsScreen');renderStatsTab('top10');}
 $('btnCloseStats').onclick=()=>showLobby();
-
-async function renderStatsTab(tab){
-  const body=$('statsBody');
-  if(!body)return;
-  body.innerHTML='<p class="stLoading">CARGANDO...</p>';
-  try{
-    if(tab==='top10') await renderTop10(body);
-    else if(tab==='h2h') await renderH2H(body);
-    else await renderMe(body);
-  }catch(e){body.innerHTML=`<p class="stEmpty">Error al cargar: ${e.message}</p>`;}
-}
-
-// TOP 10 ONLINE
+async function renderStatsTab(tab){const body=$('statsBody');if(!body)return;body.innerHTML='<p class="stLoading">CARGANDO...</p>';try{if(tab==='top10')await renderTop10(body);else if(tab==='h2h')await renderH2H(body);else await renderMe(body);}catch(e){body.innerHTML=`<p class="stEmpty">Error al cargar: ${e.message}</p>`;}}
 async function renderTop10(body){
-  const snap=await get(ref(db,'stats/users'));
-  const data=snap.val();
-  if(!data){body.innerHTML='<p class="stEmpty">Todavía no hay partidas online registradas. ¡Sé el primero!</p>';return;}
-  const rows=Object.entries(data)
-    .map(([uid,u])=>({uid,n:u.n||'???',wo:u.wo||0,lo:u.lo||0,tot:(u.wo||0)+(u.lo||0)}))
-    .filter(u=>u.tot>0)
-    .sort((a,b)=>b.wo-a.wo||b.tot-a.tot);
+  const snap=await get(ref(db,'stats/users'));const data=snap.val();
+  if(!data){body.innerHTML='<p class="stEmpty">¡Sé el primero en jugar online!</p>';return;}
+  const rows=Object.entries(data).map(([uid,u])=>({uid,n:u.n||'???',wo:u.wo||0,lo:u.lo||0,tot:(u.wo||0)+(u.lo||0)})).filter(u=>u.tot>0).sort((a,b)=>b.wo-a.wo||b.tot-a.tot);
   if(!rows.length){body.innerHTML='<p class="stEmpty">Sin partidas online aún</p>';return;}
-  const top=rows.slice(0,10);
-  const rankClass=i=>i===0?'rank1':i===1?'rank2':i===2?'rank3':'rankN';
-  body.innerHTML=`
-  <table class="leaderTable">
-    <thead><tr>
-      <th>#</th><th>JUGADOR</th>
-      <th style="text-align:center">🏆 W</th>
-      <th style="text-align:center">💀 L</th>
-      <th style="text-align:right">% WIN</th>
-    </tr></thead>
-    <tbody>
-    ${top.map((u,i)=>{
-      const pct=u.tot>0?Math.round(u.wo/u.tot*100):0;
-      const isMine=u.uid===currentUser?.uid;
-      return `<tr style="${isMine?'background:rgba(0,200,116,0.07);':''}">
-        <td><span class="rankBadge ${rankClass(i)}">${i+1}</span></td>
-        <td style="color:${isMine?'#00c874':'#ddd'};max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-          ${isMine?'⭐ ':''}<span style="font-size:11px">${esc(u.n)}</span>
-        </td>
-        <td style="text-align:center"><span class="pctWin" style="font-size:13px">${u.wo}</span></td>
-        <td style="text-align:center"><span class="pctLoss" style="font-size:13px">${u.lo}</span></td>
-        <td style="text-align:right"><span style="color:${pct>=50?'#00c874':'#ff7744'};font-size:11px">${pct}%</span></td>
-      </tr>`;
-    }).join('')}
-    </tbody>
-  </table>`;
+  const top=rows.slice(0,10),rankClass=i=>i===0?'rank1':i===1?'rank2':i===2?'rank3':'rankN';
+  body.innerHTML=`<table class="leaderTable"><thead><tr><th>#</th><th>JUGADOR</th><th style="text-align:center">🏆 W</th><th style="text-align:center">💀 L</th><th style="text-align:right">% WIN</th></tr></thead><tbody>${top.map((u,i)=>{const pct=u.tot>0?Math.round(u.wo/u.tot*100):0,isMine=u.uid===currentUser?.uid;return`<tr style="${isMine?'background:rgba(0,200,116,0.07);':''}"><td><span class="rankBadge ${rankClass(i)}">${i+1}</span></td><td style="color:${isMine?'#00c874':'#ddd'}">${isMine?'⭐ ':''}<span style="font-size:11px">${esc(u.n)}</span></td><td style="text-align:center"><span class="pctWin" style="font-size:13px">${u.wo}</span></td><td style="text-align:center"><span class="pctLoss" style="font-size:13px">${u.lo}</span></td><td style="text-align:right"><span style="color:${pct>=50?'#00c874':'#ff7744'};font-size:11px">${pct}%</span></td></tr>`;}).join('')}</tbody></table>`;
 }
-
-// HISTORIAL H2H
 async function renderH2H(body){
   if(!currentUser){body.innerHTML='<p class="stEmpty">Ingresá para ver tu historial</p>';return;}
-  const uid=currentUser.uid;
-  const snap=await get(ref(db,'stats/h2h'));
-  const data=snap.val();
-  if(!data){body.innerHTML='<p class="stEmpty">No hay enfrentamientos registrados aún</p>';return;}
+  const uid=currentUser.uid,snap=await get(ref(db,'stats/h2h')),data=snap.val();
+  if(!data){body.innerHTML='<p class="stEmpty">No hay enfrentamientos registrados</p>';return;}
   const mine=Object.entries(data).filter(([k])=>k.includes(uid));
   if(!mine.length){body.innerHTML='<p class="stEmpty">Todavía no jugaste contra nadie online</p>';return;}
-  const items=mine.map(([k,v])=>{
-    const uids=k.split('_');const oppUid=uids.find(u=>u!==uid)||uids[0];
-    const myW=v[uid]||0,oppW=v[oppUid]||0,total=myW+oppW;
-    const oppName=v['n_'+oppUid]||'Rival';
-    return{oppName,myW,oppW,total};
-  }).sort((a,b)=>b.total-a.total);
-  body.innerHTML=`<div class="h2hList">${items.map(it=>{
-    const result=it.myW>it.oppW?'<span style="color:#00c874;font-size:8px">GANÁS</span>':it.myW<it.oppW?'<span style="color:#ff4444;font-size:8px">PERDÉS</span>':'<span style="color:#aaa;font-size:8px">EMPATE</span>';
-    return `<div class="h2hCard">
-      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
-        <div style="font-size:9px;color:#aaa;letter-spacing:1px">VS</div>
-        <div style="font-size:11px;color:#00ccff">${esc(it.oppName)}</div>
-        <div style="font-size:8px;color:#555">${it.total} partida${it.total!==1?'s':''}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-        ${result}
-        <div class="h2hScore">
-          <span class="myW">${it.myW}</span>
-          <span class="sep">-</span>
-          <span class="oppW">${it.oppW}</span>
-        </div>
-      </div>
-    </div>`;
-  }).join('')}</div>`;
+  const items=mine.map(([k,v])=>{const uids=k.split('_'),oppUid=uids.find(u=>u!==uid)||uids[0],myW=v[uid]||0,oppW=v[oppUid]||0,total=myW+oppW,oppName=v['n_'+oppUid]||'Rival';return{oppName,myW,oppW,total};}).sort((a,b)=>b.total-a.total);
+  body.innerHTML=`<div class="h2hList">${items.map(it=>{const result=it.myW>it.oppW?'<span style="color:#00c874;font-size:8px">GANÁS</span>':it.myW<it.oppW?'<span style="color:#ff4444;font-size:8px">PERDÉS</span>':'<span style="color:#aaa;font-size:8px">EMPATE</span>';return`<div class="h2hCard"><div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="font-size:9px;color:#aaa;letter-spacing:1px">VS</div><div style="font-size:11px;color:#00ccff">${esc(it.oppName)}</div><div style="font-size:8px;color:#555">${it.total} partida${it.total!==1?'s':''}</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px">${result}<div class="h2hScore"><span class="myW">${it.myW}</span><span class="sep">-</span><span class="oppW">${it.oppW}</span></div></div></div>`;}).join('')}</div>`;
 }
-
-// MIS STATS INDIVIDUALES
 async function renderMe(body){
   if(!currentUser){body.innerHTML='<p class="stEmpty">Ingresá para ver tus estadísticas</p>';return;}
-  const snap=await get(ref(db,`stats/users/${currentUser.uid}`));
-  const u=snap.val()||{wo:0,lo:0,wc:0,lc:0};
-  const wo=u.wo||0,lo=u.lo||0,wc=u.wc||0,lc=u.lc||0;
-  const totO=wo+lo,totC=wc+lc,totAll=wo+lo+wc+lc;
-  const pctO=totO>0?Math.round(wo/totO*100):0;
-  const pctC=totC>0?Math.round(wc/totC*100):0;
-  const pctAll=totAll>0?Math.round((wo+wc)/totAll*100):0;
-  const streak=pctAll>=70?'🔥 EN LLAMAS':'';
-  body.innerHTML=`
-  <div class="myStatsGrid">
-    <div class="myStatCard" style="border-color:rgba(0,200,116,0.3)">
-      <h4>🌐 ONLINE</h4>
-      <div class="myStatBig statGreen">${wo}</div>
-      <div class="myStatSub">victorias online</div>
-      <div style="margin-top:6px;display:flex;flex-direction:column;gap:3px">
-        <div class="myStatRow"><span class="lbl">Derrotas</span><span class="val statRed">${lo}</span></div>
-        <div class="myStatRow"><span class="lbl">Partidas</span><span class="val">${totO}</span></div>
-        <div class="myStatRow"><span class="lbl">% Victoria</span><span class="val" style="color:${pctO>=50?'#00c874':'#ff7744'}">${pctO}%</span></div>
-      </div>
-    </div>
-    <div class="myStatCard" style="border-color:rgba(153,0,212,0.3)">
-      <h4>🤖 VS CPU</h4>
-      <div class="myStatBig statGold">${wc}</div>
-      <div class="myStatSub">victorias vs CPU</div>
-      <div style="margin-top:6px;display:flex;flex-direction:column;gap:3px">
-        <div class="myStatRow"><span class="lbl">Derrotas</span><span class="val statRed">${lc}</span></div>
-        <div class="myStatRow"><span class="lbl">Partidas</span><span class="val">${totC}</span></div>
-        <div class="myStatRow"><span class="lbl">% Victoria</span><span class="val" style="color:${pctC>=50?'#00c874':'#ff7744'}">${pctC}%</span></div>
-      </div>
-    </div>
-    <div class="myStatCard" style="grid-column:1/-1;border-color:rgba(255,215,0,0.2)">
-      <h4>⚡ GLOBAL</h4>
-      <div style="display:flex;align-items:center;gap:16px">
-        <div>
-          <div class="myStatBig statGold">${wo+wc}</div>
-          <div class="myStatSub">victorias totales</div>
-        </div>
-        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
-          <div class="myStatRow"><span class="lbl">Total partidas</span><span class="val">${totAll}</span></div>
-          <div class="myStatRow"><span class="lbl">% Victoria global</span><span class="val" style="color:${pctAll>=50?'#00c874':'#ff7744'}">${pctAll}%</span></div>
-          ${streak?`<div style="font-size:10px;color:#FFD700;text-align:right">${streak}</div>`:''}
-        </div>
-      </div>
-      <div style="margin-top:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;height:6px;width:100%">
-        <div style="height:100%;width:${pctAll}%;background:linear-gradient(90deg,#00c874,#FFD700);transition:width .5s"></div>
-      </div>
-    </div>
-  </div>`;
+  const snap=await get(ref(db,`stats/users/${currentUser.uid}`)),u=snap.val()||{wo:0,lo:0,wc:0,lc:0};
+  const wo=u.wo||0,lo=u.lo||0,wc=u.wc||0,lc=u.lc||0,totO=wo+lo,totC=wc+lc,totAll=wo+lo+wc+lc;
+  const pctO=totO>0?Math.round(wo/totO*100):0,pctC=totC>0?Math.round(wc/totC*100):0,pctAll=totAll>0?Math.round((wo+wc)/totAll*100):0;
+  body.innerHTML=`<div class="myStatsGrid"><div class="myStatCard" style="border-color:rgba(0,200,116,0.3)"><h4>🌐 ONLINE</h4><div class="myStatBig statGreen">${wo}</div><div class="myStatSub">victorias online</div><div style="margin-top:6px;display:flex;flex-direction:column;gap:3px"><div class="myStatRow"><span class="lbl">Derrotas</span><span class="val statRed">${lo}</span></div><div class="myStatRow"><span class="lbl">Partidas</span><span class="val">${totO}</span></div><div class="myStatRow"><span class="lbl">% Victoria</span><span class="val" style="color:${pctO>=50?'#00c874':'#ff7744'}">${pctO}%</span></div></div></div><div class="myStatCard" style="border-color:rgba(153,0,212,0.3)"><h4>🤖 VS CPU</h4><div class="myStatBig statGold">${wc}</div><div class="myStatSub">victorias vs CPU</div><div style="margin-top:6px;display:flex;flex-direction:column;gap:3px"><div class="myStatRow"><span class="lbl">Derrotas</span><span class="val statRed">${lc}</span></div><div class="myStatRow"><span class="lbl">Partidas</span><span class="val">${totC}</span></div><div class="myStatRow"><span class="lbl">% Victoria</span><span class="val" style="color:${pctC>=50?'#00c874':'#ff7744'}">${pctC}%</span></div></div></div><div class="myStatCard" style="grid-column:1/-1;border-color:rgba(255,215,0,0.2)"><h4>⚡ GLOBAL</h4><div style="display:flex;align-items:center;gap:16px"><div><div class="myStatBig statGold">${wo+wc}</div><div class="myStatSub">victorias totales</div></div><div style="flex:1;display:flex;flex-direction:column;gap:4px"><div class="myStatRow"><span class="lbl">Total partidas</span><span class="val">${totAll}</span></div><div class="myStatRow"><span class="lbl">% Victoria global</span><span class="val" style="color:${pctAll>=50?'#00c874':'#ff7744'}">${pctAll}%</span></div>${pctAll>=70?'<div style="font-size:10px;color:#FFD700;text-align:right">🔥 EN LLAMAS</div>':''}</div></div><div style="margin-top:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;height:6px;width:100%"><div style="height:100%;width:${pctAll}%;background:linear-gradient(90deg,#00c874,#FFD700)"></div></div></div></div>`;
 }
-
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-// ══════════════════════════════════════════════════════════════════
-
-// ── WIN ──────────────────────────────────────────────────────────
 $('btnRevanche').onclick=async()=>{if(window._gInt){clearInterval(window._gInt);window._gInt=null;}startGame();};
 function showWinScreen(txt){$('winTxt').textContent=txt;$('btnRevanche').style.display=vsMode==='cpu'?'block':'none';showScreen('winScreen');}
-$('btnLobbyBack').onclick=async()=>{if(window._gInt){clearInterval(window._gInt);window._gInt=null;}if(roomRef){await remove(roomRef);roomRef=null;}roomCode=null;myRole=null;vsMode=null;showLobby();};
+$('btnLobbyBack').onclick=async()=>{
+  if(window._gInt){clearInterval(window._gInt);window._gInt=null;}
+  closeRTC();
+  if(roomRef){await remove(roomRef);roomRef=null;}
+  roomCode=null;myRole=null;vsMode=null;showLobby();
+};
 
-// ── KEYBOARD ─────────────────────────────────────────────────────
 const K={};
 window.addEventListener('keydown',e=>{if(K[e.code])return;K[e.code]=true;if(e.code==='KeyF'||e.code==='Space')myInput.attack=true;if(e.code==='KeyH')myInput.special=true;myInput.left=!!(K.KeyA||K.ArrowLeft);myInput.right=!!(K.KeyD||K.ArrowRight);myInput.jump=!!(K.KeyW||K.ArrowUp);myInput.block=!!(K.KeyG||K.KeyL);pushInputNow();});
 window.addEventListener('keyup',e=>{K[e.code]=false;if(e.code==='KeyF'||e.code==='Space')myInput.attack=false;if(e.code==='KeyH')myInput.special=false;myInput.left=!!(K.KeyA||K.ArrowLeft);myInput.right=!!(K.KeyD||K.ArrowRight);myInput.jump=!!(K.KeyW||K.ArrowUp);myInput.block=!!(K.KeyG||K.KeyL);pushInputNow();});
 
-// ── TOUCH ────────────────────────────────────────────────────────
 function setupTouch(){
   function getPos(t){const r=canvas.getBoundingClientRect();return{x:(t.clientX-r.left)*(W/r.width),y:(t.clientY-r.top)*(H/r.height)};}
   const near=(p,b)=>Math.hypot(p.x-b.x,p.y-b.y)<b.r*1.5;
