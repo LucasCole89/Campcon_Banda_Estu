@@ -433,14 +433,18 @@ function updateKO(){
     if(s.celebFrameT>=dur){s.celebFrameT=0;if(special){if(s.celebFrame<2)s.celebFrame++;else s.celebFrame=s.celebFrame===2?3:2;}else{const cf=getFrames(s.winner,'celeb');s.celebFrame=(s.celebFrame+1)%cf.length;}}
     gs[s.winner].frame=s.celebFrame;if(isMario)gs[s.winner].wiggle=2;
     if(s.t>240){
-      s.phase='done';gs[s.winner].wiggle=0;
-      SFX.win();stopMusic();
-      // Host escribe matchOver para sincronizar al guest
-      if(vsMode==='online'&&myRole==='host'&&roomRef){
-        update(roomRef,{matchOver:{winner:s.winner,name:s.winnerName}});
-      }
+      s.phase='done';
+      gs[s.winner].wiggle=0;
+      // Detener el loop antes de mostrar la pantalla
       if(window._gInt){clearInterval(window._gInt);window._gInt=null;}
-      setTimeout(()=>{hideCanvas();$('winTxt').textContent=s.winnerName+' WINS!';showScreen('winScreen');koSeq=null;},500);
+      SFX.win();stopMusic();
+      setTimeout(()=>{
+        hideCanvas();
+        $('winTxt').textContent=s.winnerName+' WINS!';
+        showScreen('winScreen');
+        // limpiar koSeq después de mostrar la pantalla
+        koSeq=null;
+      },500);
     }
   }
 }
@@ -734,7 +738,7 @@ async function startGame(){
 $('btnRevanche').onclick=async()=>{
   if(window._gInt){clearInterval(window._gInt);window._gInt=null;}
   if(vsMode==='cpu'){startGame();return;}
-  if(myRole==='host'){await update(roomRef,{status:'waiting',hostChar:null,guestChar:null,guestReady:false,hostReady:false,stage:null,fightStartAt:null,matchOver:null});startGame();}
+  if(myRole==='host'){await update(roomRef,{status:'waiting',hostChar:null,guestChar:null,guestReady:false,hostReady:false,stage:null,fightStartAt:null});startGame();}
   else{showScreen('waitingScreen');$('waitMsg').textContent='Esperando revancha...';}
 };
 $('btnLobbyBack').onclick=async()=>{
