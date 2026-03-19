@@ -483,9 +483,12 @@ function startKO(loserKey,winnerKey){
   wins[winnerKey]++;koSeq.matchWin=wins[winnerKey]>=2;
 }
 function updateKO(){
-  if(!koSeq)return;const s=koSeq,loser=gs[s.loser];
+  if(!koSeq)return;
+  // HOST: sigue pusheando durante la animación KO para que el guest lo reciba sí o sí
+  if(vsMode==='online'&&myRole==='host'&&(koSeq.t<=6||koSeq.t%6===0))pushState();
+  const s=koSeq,loser=gs[s.loser];
   if(s.phase==='flyback'){s.vx*=0.88;s.vy+=GR;loser.x+=s.vx;loser.y+=s.vy;if(loser.y>=FLOOR){loser.y=FLOOR;s.phase='floor';loser.state='defeated';loser.frame=0;s.t=0;}}
-  else if(s.phase==='floor'){s.t++;s.idleT++;if(s.idleT>40&&gs[s.winner].state==='idle'){gs[s.winner].state='celeb';gs[s.winner].frame=0;}if(s.t>60){if(s.matchWin){s.phase='celeb';s.t=0;}else{currentRound++;roundBanner={text:'ROUND '+currentRound,t:0};koSeq=null;setTimeout(()=>{initRound();startTimer();},1500);}}}
+  else if(s.phase==='floor'){s.t++;s.idleT++;if(s.idleT>40&&gs[s.winner].state==='idle'){gs[s.winner].state='celeb';gs[s.winner].frame=0;}if(s.t>60){if(s.matchWin){s.phase='celeb';s.t=0;}          else{currentRound++;roundBanner={text:'ROUND '+currentRound,t:0};koSeq=null;setTimeout(()=>{initRound();if(vsMode==='cpu'||myRole==='host')startTimer();},1500);}}}
   else if(s.phase==='celeb'){
     s.t++;const wdef=s.winner==='p1'?SP._p1def:SP._p2def;
     const special=wdef?.key==='yiyo'||wdef?.key==='mario';
@@ -628,7 +631,7 @@ function pushState(){
   const pack=pk=>{const p=gs[pk];return{x:Math.round(p.x),y:Math.round(p.y),vy:+p.vy.toFixed(2),hp:p.hp,hp2:p.hp2,sp:p.special,st:p.state,fr:p.frame,fa:p.facing,bl:p.blocking?1:0,gr:p.grounded?1:0,wi:p.wiggle||0};};
   const d={p1:pack('p1'),p2:pack('p2'),ti:Math.ceil(gs.timer)};
   if(specialPhase){const fo=specialPhase.frozenOpp;d.sp={pk:specialPhase.pk,ok:specialPhase.ok,t:specialPhase.t,dd:specialPhase.damageDealt?1:0,px:Math.round(specialPhase.plantX||0),hs:specialPhase.holdStarted?1:0,ht:specialPhase.holdT||0,cx:typeof specialPhase.catX==='number'?specialPhase.catX:null,cfi:specialPhase.catFi||0,ai:specialPhase.alfredInit?1:0,ax:typeof specialPhase.alfredX==='number'?Math.round(specialPhase.alfredX):-80,ap:specialPhase.alfredPhase||'enter',at:specialPhase.alfredT||0,oh:specialPhase.oppHit?1:0,fo:fo?{x:Math.round(fo.x),y:Math.round(fo.y),hp:fo.hp,st:fo.state,fr:fo.frame,fa:fo.facing}:null};}
-  if(koSeq){d.ko={loser:koSeq.loser,winner:koSeq.winner};}
+  if(koSeq){d.ko={loser:koSeq.loser,winner:koSeq.winner,mw:koSeq.matchWin?1:0};}
   set(stateRef,d);
 }
 
