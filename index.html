@@ -492,7 +492,7 @@ function updateKO(){
   else if(s.phase==='celeb'){
     s.t++;const wdef=s.winner==='p1'?SP._p1def:SP._p2def;
     const special=wdef?.key==='yiyo'||wdef?.key==='mario';
-    s.celebFrameT++;const dur=s.celebFrame<=1?60:35;
+    s.celebFrameT++;    const dur=s.celebFrame<=1?20:8;
     if(s.celebFrameT>=dur){s.celebFrameT=0;if(special){if(s.celebFrame<2)s.celebFrame++;else s.celebFrame=s.celebFrame===2?3:2;}else{const cf=getFrames(s.winner,'celeb');s.celebFrame=(s.celebFrame+1)%cf.length;}}
     gs[s.winner].frame=s.celebFrame;if(wdef?.key==='mario')gs[s.winner].wiggle=2;
     if(s.t>240){
