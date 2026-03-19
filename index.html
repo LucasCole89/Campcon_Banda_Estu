@@ -130,8 +130,9 @@ canvas{display:block;touch-action:none;}
 <body>
 <div id="rotateMsg"><div class="icon">📱</div><p>Rotá el teléfono<br>para jugar 🕹️</p></div>
 <div id="dbg"></div>
-<div class="screen" id="splashScreen">
-  <video id="splashVideo" src="" style="width:100%;height:100%;object-fit:contain;display:block;" autoplay muted playsinline></video>
+<div class="screen hidden" id="splashScreen" style="background:#000;padding:0;cursor:pointer;">
+  <video id="splashVideo" style="width:100%;height:100%;object-fit:contain;display:block;" playsinline></video>
+  <div id="splashTap" style="position:absolute;bottom:40px;left:0;right:0;text-align:center;font-size:18px;color:#FFD700;letter-spacing:3px;animation:pulse 1.2s ease-in-out infinite;">▶ TOCÁ PARA JUGAR</div>
 </div>
 <div class="screen hidden" id="loginScreen">
   <div class="title-wrap"><span class="tl1">💥 ESTU'S FIGHTERS</span><span class="tvs">VS</span><span class="tl2">RODRIGUITOS ⭐</span></div>
@@ -248,31 +249,47 @@ function stopMusic(){if(musicNode){clearTimeout(musicNode);musicNode=null;}}
   const vid=$('splashVideo');
   const rotateMsg=$('rotateMsg');
   const splashScreen=$('splashScreen');
+  const splashTap=$('splashTap');
+  let videoStarted=false;
 
   vid.src=BASE+'Presentacion_Video_Estu.mp4';
-  vid.onerror=()=>showScreen('loginScreen');
   vid.onended=()=>showScreen('loginScreen');
-  splashScreen.addEventListener('click',()=>{if(!splashScreen.classList.contains('hidden'))showScreen('loginScreen');},{once:true});
+  vid.onerror=()=>showScreen('loginScreen');
 
   function isLandscape(){return window.innerWidth>window.innerHeight;}
 
   function checkOrientation(){
     if(isLandscape()){
-      // Giró a landscape — ocultar rotate, arrancar video con sonido
       rotateMsg.style.display='none';
-      splashScreen.classList.remove('hidden');
-      vid.muted=false;
-      vid.play().catch(()=>{vid.muted=true;vid.play();});
+      // Mostrar splash con "TOCÁ PARA JUGAR" si el video no arrancó aún
+      if(!videoStarted){
+        splashScreen.classList.remove('hidden');
+        splashTap.style.display='block';
+      }
     } else {
-      // Portrait — mostrar rotate, pausar video
+      // Portrait: mostrar rotate, ocultar splash, pausar video
       rotateMsg.style.display='flex';
       splashScreen.classList.add('hidden');
-      vid.pause();
+      if(videoStarted)vid.pause();
     }
   }
 
+  // Tap → arrancar video con sonido (gesto de usuario garantiza audio)
+  splashScreen.addEventListener('click',()=>{
+    if(!isLandscape())return;
+    if(!videoStarted){
+      videoStarted=true;
+      splashTap.style.display='none';
+      vid.muted=false;
+      vid.play().catch(()=>{vid.muted=true;vid.play();});
+    } else {
+      // Si ya está corriendo, tap omite el video
+      showScreen('loginScreen');
+    }
+  });
+
   window.addEventListener('resize',checkOrientation);
-  checkOrientation(); // estado inicial
+  checkOrientation();
 })();
 
 // ── AUTH ─────────────────────────────────────────────────────────
