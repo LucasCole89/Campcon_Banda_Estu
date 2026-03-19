@@ -6,6 +6,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Estu's Fighters ⚡</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a1a">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{background:#0a0a1a;overflow:hidden;width:100vw;height:100vh;font-family:'Arial Black',sans-serif;color:#fff;display:flex;align-items:center;justify-content:center;}
@@ -882,6 +885,15 @@ $('btnLobbyBack').onclick=async()=>{
 const K={};
 window.addEventListener('keydown',e=>{if(K[e.code])return;K[e.code]=true;if(e.code==='KeyF'||e.code==='Space')myInput.attack=true;if(e.code==='KeyH')myInput.special=true;myInput.left=!!(K.KeyA||K.ArrowLeft);myInput.right=!!(K.KeyD||K.ArrowRight);myInput.jump=!!(K.KeyW||K.ArrowUp);myInput.block=!!(K.KeyG||K.KeyL);pushInputNow();});
 window.addEventListener('keyup',e=>{K[e.code]=false;if(e.code==='KeyF'||e.code==='Space')myInput.attack=false;if(e.code==='KeyH')myInput.special=false;myInput.left=!!(K.KeyA||K.ArrowLeft);myInput.right=!!(K.KeyD||K.ArrowRight);myInput.jump=!!(K.KeyW||K.ArrowUp);myInput.block=!!(K.KeyG||K.KeyL);pushInputNow();});
+
+// ── PWA ──────────────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/Campcon_Banda_Estu/sw.js')
+      .then(()=>console.log('SW registrado'))
+      .catch(e=>console.warn('SW error',e));
+  });
+}
 
 function setupTouch(){
   function getPos(t){const r=canvas.getBoundingClientRect();return{x:(t.clientX-r.left)*(W/r.width),y:(t.clientY-r.top)*(H/r.height)};}
