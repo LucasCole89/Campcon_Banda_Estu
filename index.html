@@ -171,7 +171,7 @@ canvas{display:block;touch-action:none;}
     <div class="rightPanel" id="panelCPU" style="display:none;align-items:center;justify-content:center;">
       <h3>VS CPU</h3>
       <button class="btn btnCPU" id="btnCPU">⚡ JUGAR AHORA</button>
-      <p id="cpuLoadMsg" style="display:none;font-size:9px;color:#aaa;letter-spacing:2px;margin-top:8px;">CARGANDO PERSONAJES...</p>
+      <p id="cpuLoadMsg" style="display:none;font-size:9px;color:#aaa;letter-spacing:2px;margin-top:8px;">CARGANDO SPRITES...</p>
     </div>
     <div class="rightPanel" id="panelOnline" style="display:none;">
       <h3>🌐 MULTIJUGADOR</h3>
@@ -675,16 +675,16 @@ function showSelectScreen(){
   myCharChoice=null;oppCharChoice=null;$('btnFight').style.display='none';$('btnFight').disabled=false;$('selMsg').textContent=vsMode==='cpu'?'Elegí tu personaje':'Tocá el personaje que querés usar';
   const grid=$('charGrid');grid.innerHTML='';CHARS.forEach((ch,i)=>{const card=document.createElement('div');card.className='charCard';card.id='sc'+i;card.innerHTML=`<canvas id="scv${i}" width="110" height="165"></canvas><div class="cname" style="color:${ch.color}">${ch.name}</div><div class="cspec">${ch.specialName.replace('\n',' ')}</div>`;card.addEventListener('click',()=>selectChar(i));grid.appendChild(card);});
   showScreen('selectScreen');
-  if(vsMode==='online'&&myRole==='guest'){CHARS.forEach((_,i)=>{const c=$('sc'+i);if(c){c.style.opacity='0.35';c.style.pointerEvents='none';}});$('selMsg').textContent='Esperando que el rival elija...';const hcRef=ref(db,`rooms/${roomCode}/hostChar`);    onValue(hcRef,snap=>{const hc=snap.val();if(!hc)return;off(hcRef);CHARS.forEach((c,i)=>{const card=$('sc'+i);if(!card)return;if(c.key!==hc){card.style.opacity='1';card.style.pointerEvents='auto';}else{card.style.opacity='0.25';card.style.pointerEvents='none';}});setSelMsg('¡Elegí tu personaje!');});}
+  if(vsMode==='online'&&myRole==='guest'){CHARS.forEach((_,i)=>{const c=$('sc'+i);if(c){c.style.opacity='0.35';c.style.pointerEvents='none';}});$('selMsg').textContent='Esperando que el rival elija...';const hcRef=ref(db,`rooms/${roomCode}/hostChar`);onValue(hcRef,snap=>{const hc=snap.val();if(!hc)return;off(hcRef);CHARS.forEach((c,i)=>{const card=$('sc'+i);if(!card)return;if(c.key!==hc){card.style.opacity='1';card.style.pointerEvents='auto';}else{card.style.opacity='0.25';card.style.pointerEvents='none';}});$('selMsg').textContent='¡Elegí tu personaje!';});}
   if(selAnimId)cancelAnimationFrame(selAnimId);selIdleFrame=0;selIdleTimer=0;
   function anim(){selIdleTimer++;if(selIdleTimer>8){selIdleTimer=0;selIdleFrame++;}CHARS.forEach((ch,i)=>{const sc=$('scv'+i);if(!sc)return;const sx=sc.getContext('2d');sx.clearRect(0,0,110,165);const frames=SP[ch.key]?.idle||[];if(!frames.length)return;const img=frames[selIdleFrame%frames.length];if(!img)return;const sc2=CHAR_SCALE[ch.key]||1,h=165*sc2,w=img.width*(h/img.height);sx.drawImage(img,(110-w)/2,165-h,w,h);});selAnimId=requestAnimationFrame(anim);}
   selAnimId=requestAnimationFrame(anim);
 }
 function selectChar(idx){
-  if(vsMode==='cpu'){if(myCharChoice)return;myCharChoice=CHARS[idx].key;CHARS.forEach((_,i)=>{const c=$('sc'+i);if(!c)return;c.classList.remove('sel-p1','sel-p2');if(i===idx)c.classList.add('sel-p1');else{c.style.opacity='0.4';c.style.pointerEvents='none';}});const others=CHARS.filter(c=>c.key!==myCharChoice);oppCharChoice=others[Math.floor(Math.random()*others.length)].key;setSelMsg('VS '+CHARS.find(c=>c.key===oppCharChoice)?.name+' (CPU)');$('btnFight').style.display='block';$('btnFight').disabled=false;return;}
+  if(vsMode==='cpu'){if(myCharChoice)return;myCharChoice=CHARS[idx].key;CHARS.forEach((_,i)=>{const c=$('sc'+i);if(!c)return;c.classList.remove('sel-p1','sel-p2');if(i===idx)c.classList.add('sel-p1');else{c.style.opacity='0.4';c.style.pointerEvents='none';}});const others=CHARS.filter(c=>c.key!==myCharChoice);oppCharChoice=others[Math.floor(Math.random()*others.length)].key;$('selMsg').textContent='VS '+CHARS.find(c=>c.key===oppCharChoice)?.name+' (CPU)';$('btnFight').style.display='block';$('btnFight').disabled=false;return;}
   if(myCharChoice)return;myCharChoice=CHARS[idx].key;CHARS.forEach((_,i)=>{const c=$('sc'+i);if(!c)return;c.classList.remove('sel-p1','sel-p2');if(i===idx)c.classList.add(myRole==='host'?'sel-p1':'sel-p2');else{c.style.opacity='0.4';c.style.pointerEvents='none';}});
-  if(myRole==='host'){update(roomRef,{hostChar:myCharChoice,guestReady:false});setSelMsg('Esperando que el rival elija...');const grRef=ref(db,`rooms/${roomCode}/guestReady`);onValue(grRef,snap=>{if(snap.val()!==true)return;off(grRef);setSelMsg('¡El rival está listo!');$('btnFight').style.display='block';$('btnFight').disabled=false;});}
-  else{update(roomRef,{guestChar:myCharChoice,guestReady:true});setSelMsg('Esperando que el host confirme...');const hrRef=ref(db,`rooms/${roomCode}/hostReady`);onValue(hrRef,snap=>{if(snap.val()!==true)return;off(hrRef);setSelMsg('¡El host está listo!');$('btnFight').style.display='block';$('btnFight').disabled=false;});}
+  if(myRole==='host'){update(roomRef,{hostChar:myCharChoice,guestReady:false});$('selMsg').textContent='Esperando que el rival elija...';const grRef=ref(db,`rooms/${roomCode}/guestReady`);onValue(grRef,snap=>{if(snap.val()!==true)return;off(grRef);$('selMsg').textContent='¡El rival está listo!';$('btnFight').style.display='block';$('btnFight').disabled=false;});}
+  else{update(roomRef,{guestChar:myCharChoice,guestReady:true});$('selMsg').textContent='Esperando que el host confirme...';const hrRef=ref(db,`rooms/${roomCode}/hostReady`);onValue(hrRef,snap=>{if(snap.val()!==true)return;off(hrRef);$('selMsg').textContent='¡El host está listo!';$('btnFight').style.display='block';$('btnFight').disabled=false;});}
 }
 $('btnFight').onclick=async()=>{
   if(!myCharChoice||(vsMode==='cpu'&&!oppCharChoice))return;
