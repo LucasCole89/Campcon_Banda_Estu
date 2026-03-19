@@ -432,7 +432,7 @@ function drawSpecialFreeze(){
       if(s.holdStarted&&s.holdT>=55&&!s.damageDealt){s.damageDealt=true;if(Math.abs(s.plantX-s.frozenOpp.x)<FW*1.5)applySpecialDmg(ok,pk,s);}
     }
   }
-  s.t++;const done=s.holdStarted?s.holdT>=25:s.t>=120;
+  s.t++;const done=s.holdStarted?s.holdT>=55:s.t>=120;
   if(done){specialPhase=null;if(gs.phase!=='ko'){gs.phase='fight';gs[pk].state='idle';gs[pk].frame=0;if(gs[ok].state!=='ko'){gs[ok].state='idle';gs[ok].frame=0;inv[ok]=0;}}}
 }
 
