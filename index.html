@@ -734,7 +734,6 @@ async function saveMatchResult(winnerPk, loserPk){
   const uPhoto=currentUser.photoURL||'';
 
   if(vsMode==='cpu'){
-    // Solo guardar stats del jugador humano (siempre p1)
     const iWon=(winnerPk==='p1');
     const uRef=ref(db,`stats/users/${uid}`);
     try{
@@ -748,7 +747,20 @@ async function saveMatchResult(winnerPk, loserPk){
     return;
   }
 
-  // Online: ambos jugadores (sólo el host escribe para los dos)
+  // Online: cada jugador escribe SUS PROPIAS stats (evita error de permisos)
+  const myPk=myRole==='host'?'p1':'p2';
+  const iWon=(winnerPk===myPk);
+  const uRef=ref(db,`stats/users/${uid}`);
+  try{
+    await runTransaction(uRef,cur=>{
+      const d=cur||{n:uName,ph:uPhoto,wo:0,lo:0,wc:0,lc:0};
+      d.n=uName;d.ph=uPhoto;
+      if(iWon)d.wo=(d.wo||0)+1; else d.lo=(d.lo||0)+1;
+      return d;
+    });
+  }catch(e){console.warn('saveStats online self',e);}
+
+  // Solo el host guarda el H2H (necesita los UIDs de ambos del roomRef)
   if(myRole!=='host')return;
   const snap=await get(roomRef).catch(()=>null);
   const room=snap?.val();
@@ -759,28 +771,12 @@ async function saveMatchResult(winnerPk, loserPk){
   if(!hostUid||!guestUid)return;
 
   const hostWon=(winnerPk==='p1');
-
-  // Actualizar stats individuales de ambos
-  const saveUser=async(uid2,name2,won)=>{
-    const uRef=ref(db,`stats/users/${uid2}`);
-    await runTransaction(uRef,cur=>{
-      const d=cur||{n:name2,ph:'',wo:0,lo:0,wc:0,lc:0};
-      d.n=name2;
-      if(won)d.wo=(d.wo||0)+1; else d.lo=(d.lo||0)+1;
-      return d;
-    });
-  };
-  await saveUser(hostUid,hostName,hostWon).catch(e=>console.warn('saveUser host',e));
-  await saveUser(guestUid,guestName,!hostWon).catch(e=>console.warn('saveUser guest',e));
-
-  // Guardar historial H2H
   const h2hKey=[hostUid,guestUid].sort().join('_');
   const h2hRef=ref(db,`stats/h2h/${h2hKey}`);
   await runTransaction(h2hRef,cur=>{
     const d=cur||{};
     d[hostUid]=(d[hostUid]||0)+(hostWon?1:0);
     d[guestUid]=(d[guestUid]||0)+(!hostWon?1:0);
-    // Guardar nombres para mostrar sin otra consulta
     d['n_'+hostUid]=hostName;
     d['n_'+guestUid]=guestName;
     return d;
