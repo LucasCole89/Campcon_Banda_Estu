@@ -400,8 +400,7 @@ $('btnCreate').onclick=async()=>{
       const d=snap.val();if(!d)return;
       if(d.status==='ready'&&d.guest){
         unsub();
-        // guardar uid/nombre del guest para stats
-        if(!gs)gs={};gs._guestUid=d.guest;gs._guestName=d.guestName;
+        window._oppUid=d.guest;window._oppName=d.guestName;
         startGame();
       }
     });
@@ -416,10 +415,10 @@ window._join=async code=>{
     await update(roomRef,{guest:currentUser.uid,guestName:currentUser.displayName||'Guest',status:'ready'});
     onDisconnect(roomRef).remove();
     myRole='guest';vsMode='online';
-    // guardar uid/nombre del host para stats
+    // guardar uid/nombre del host para stats (después de startGame)
     const hostSnap=await get(roomRef);
     const hd=hostSnap.val()||{};
-    if(!gs)gs={};gs._hostUid=hd.host;gs._hostName=hd.hostName;
+    window._oppUid=hd.host;window._oppName=hd.hostName;
     myRole='guest';vsMode='online';
     $('waitTitle').textContent='Uniéndose...';$('displayCode').style.display='none';$('waitMsg').textContent='Conectando...';
     showScreen('waitingScreen');startGame();
@@ -619,8 +618,9 @@ function updateKO(){
       // Guardar estadísticas
       const iWon=(vsMode==='cpu'&&s.winner==='p1')||(vsMode==='online'&&((myRole==='host'&&s.winner==='p1')||(myRole==='guest'&&s.winner==='p2')));
       const myChar=myRole==='host'||vsMode==='cpu'?SP._p1def?.key:SP._p2def?.key;
-      const oppChar=myRole==='host'||vsMode==='cpu'?SP._p2def?.key:SP._p1def?.key;
-      saveMatchResult({mode:vsMode==='cpu'?'cpu':'online',won:iWon,myChar,oppUid:vsMode==='online'?(myRole==='host'?gs._guestUid:gs._hostUid):null,oppName:vsMode==='online'?(myRole==='host'?gs._guestName:gs._hostName):null,oppChar}).catch(console.error);
+      saveMatchResult({mode:vsMode==='cpu'?'cpu':'online',won:iWon,myChar,
+        oppUid:vsMode==='online'?window._oppUid:null,
+        oppName:vsMode==='online'?window._oppName:null}).catch(console.error);
       SFX.win();stopMusic();
       setTimeout(()=>{hideCanvas();showWinScreen(s.winnerName+' WINS!');koSeq=null;},500);
     }
