@@ -143,7 +143,7 @@ canvas{display:block;touch-action:none;}
 <canvas id="c" style="display:none;"></canvas>
 <div class="screen hidden" id="winScreen">
   <h2 id="winTxt"></h2>
-  <button class="btn btnRevanche" id="btnRevanche">🥊 REVANCHA</button>
+  <button class="btn btnRevanche" id="btnRevanche" style="display:none;"></button>
   <button class="btn" style="background:rgba(255,255,255,0.1);color:#fff;font-size:11px;padding:8px 18px;" id="btnLobbyBack">Volver al lobby</button>
 </div>
 
@@ -440,9 +440,7 @@ function updateKO(){
       SFX.win();stopMusic();
       setTimeout(()=>{
         hideCanvas();
-        $('winTxt').textContent=s.winnerName+' WINS!';
-        showScreen('winScreen');
-        // limpiar koSeq después de mostrar la pantalla
+        showWinScreen(s.winnerName+' WINS!');
         koSeq=null;
       },500);
     }
@@ -737,10 +735,15 @@ async function startGame(){
 // ── WIN ──────────────────────────────────────────────────────────
 $('btnRevanche').onclick=async()=>{
   if(window._gInt){clearInterval(window._gInt);window._gInt=null;}
-  if(vsMode==='cpu'){startGame();return;}
-  if(myRole==='host'){await update(roomRef,{status:'waiting',hostChar:null,guestChar:null,guestReady:false,hostReady:false,stage:null,fightStartAt:null});startGame();}
-  else{showScreen('waitingScreen');$('waitMsg').textContent='Esperando revancha...';}
+  startGame();
 };
+
+// Mostrar/ocultar revancha según modo
+function showWinScreen(txt){
+  $('winTxt').textContent=txt;
+  $('btnRevanche').style.display=vsMode==='cpu'?'block':'none';
+  showScreen('winScreen');
+}
 $('btnLobbyBack').onclick=async()=>{
   if(window._gInt){clearInterval(window._gInt);window._gInt=null;}
   if(roomRef){await remove(roomRef);roomRef=null;}
