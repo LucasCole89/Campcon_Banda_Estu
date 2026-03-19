@@ -429,7 +429,7 @@ function drawSpecialFreeze(){
     else{const lsf=spF[spF.length-1];if(lsf){const dw=lsf.width*(fhPk/lsf.height);ctx.save();if(p.facing<0){ctx.translate(p.x+dw/2,p.y-fhPk);ctx.scale(-1,1);}else ctx.translate(p.x-dw/2,p.y-fhPk);ctx.drawImage(lsf,0,0,dw,fhPk);ctx.restore();}
       const pl=spSP?.plants||[],fi2=Math.min(Math.floor((s.t-35)/7),pl.length-1),pf=pl[fi2];if(pf){const ph=fhPk*0.85,pw=pf.width*(ph/pf.height);ctx.save();ctx.translate(s.plantX,FLOOR);ctx.drawImage(pf,-pw/2,-ph,pw,ph);ctx.restore();}
       if(!s.holdStarted&&fi2>=pl.length-1){s.holdStarted=true;s.holdT=0;}if(s.holdStarted)s.holdT++;
-      if(s.holdStarted&&s.holdT>=25&&!s.damageDealt){s.damageDealt=true;if(Math.abs(s.plantX-s.frozenOpp.x)<FW*1.5)applySpecialDmg(ok,pk,s);}
+      if(s.holdStarted&&s.holdT>=55&&!s.damageDealt){s.damageDealt=true;if(Math.abs(s.plantX-s.frozenOpp.x)<FW*1.5)applySpecialDmg(ok,pk,s);}
     }
   }
   s.t++;const done=s.holdStarted?s.holdT>=25:s.t>=120;
